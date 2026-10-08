@@ -240,6 +240,7 @@
     .hero .profile { flex-direction: column; text-align: center; } /* avatar on top: the lines get the full width */
     .hero .socials { justify-content: center; }
     .hero .name { display: block; margin-inline: auto; }
+    .tagline .long { display: none; }
   }
   @media (max-width: 420px) {
     .cta, .stats { grid-template-columns: 1fr; }
@@ -486,3 +487,4 @@
   .gx-sky { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
   .gx-sky img { position: absolute; image-rendering: pixelated; animation: twinkle var(--d) steps(3, end) var(--delay) infinite; }
   @media (prefers-reduced-motion: reduce) { .gx-sky img { animation: none; } }
+  .tagline .short { display: none; } @media (max-width: 560px) { .tagline .short { display: inline; } }
