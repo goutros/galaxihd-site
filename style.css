@@ -237,6 +237,9 @@
     .avatar { width: 64px; height: 64px; border-radius: 18px; }
     .profile, .profile-mini { gap: 14px; padding: 16px; }
     .name { height: 28px; }
+    .hero .profile { flex-direction: column; text-align: center; } /* avatar on top: the lines get the full width */
+    .hero .socials { justify-content: center; }
+    .hero .name { display: block; margin-inline: auto; }
   }
   @media (max-width: 420px) {
     .cta, .stats { grid-template-columns: 1fr; }
@@ -275,6 +278,8 @@
   @media (width < 800px) { /* phones: a pop-over menu that may cover the page, never remembered */
     .panel { z-index: 20; width: min(260px, calc(100% - 32px)); }
     .panel.glass, .menu-btn.glass { background: rgba(12, 32, 66, .94); } /* content scrolls under these on phones: solid enough to read over white cards */
+    .top { top: 0; left: 0; right: 0; padding: 10px 16px; background: rgba(10, 26, 56, .9); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); } /* a bar, so headings scroll under it instead of under a floating button */
+    .top .menu-btn.glass { background: none; box-shadow: none; }
   }
   @media (prefers-reduced-motion: reduce) { .panel.anim, .menu-btn span { animation: none; transition: none; } }
   /* ---- video grids ---- */
@@ -328,7 +333,7 @@
   #shorts { background: none; box-shadow: none; padding: 4px 0 8px; container-type: inline-size; } /* 4px less on top: the 36px < > buttons already push the heading down 4px */
   #shorts h2 { color: #fff; }
   .shorts {
-    --n: 1; --gap: 12px; display: flex; gap: var(--gap); overflow-x: auto; scroll-snap-type: x mandatory;
+    --n: 1.5; --gap: 12px; /* phones: one and a half, so the next Short peeks in and the tile isn't a whole screen tall */ display: flex; gap: var(--gap); overflow-x: auto; scroll-snap-type: x mandatory;
     overscroll-behavior-x: contain; scrollbar-width: none;
   }
   .shorts::-webkit-scrollbar { display: none; }

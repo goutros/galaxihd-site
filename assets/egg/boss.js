@@ -181,6 +181,22 @@ window.GALAXI_BOSS = {
       flavor: ["* Galaxi is pretending to be a boss.", "* Galaxi hums the overworld theme.", "* Galaxi swears he got all the coins once."], // draft
       otherwise: ["Okay, last attack.", "...Probably."] }, // draft
   ],
+  // On a phone (touchscreen, no mouse) there's no fight: after the opening Galaxi notices and you play tic-tac-toe instead, best of 3
+  // (draws don't count). You're X (assets/egg/ui/x.png), he's O (o.png), both 16x16 white. Idea and beats by Galaxi; all wording below is a Claude draft for him to polish.
+  phone: {
+    intro: ["Wait.", "Are you on your PHONE right now?", "...", "Okay, this is awkward.", "I can't fight you like this. You'd need like three thumbs.", "...",
+      "Okay. Compromise.", "Tic tac toe. Best of 3.", "You're X, I'm O. Tap a square."],
+    mistake: .3,         // how often he just guesses instead of playing properly (0 = never loses, 1 = random)
+    quipChance: .35,     // how often he says something while it's his move
+    quips: ["Hmm.", "Bold.", "I see what you're doing.", "Calculated.", "...Okay, that one's a guess."],
+    roundWin: () => any([["Hey! I wasn't ready!"], ["Okay. Beginner's luck."], ["That was the warm-up.", "...Obviously."]]),
+    roundLose: () => any([["Ha! O wins!"], ["Tic tac TOE.", "...That's not a joke, I just like saying it."], ["I'm basically a tic tac toe pro.", "I think..."]]),
+    draw: () => any([["A draw?", "Okay, again."], ["Nobody wins.", "Classic tic tac toe."]]),
+    youWin: ["...", "You beat me. At tic tac toe.", "On a PHONE.", "Okay, fine. You win this one.", "Come back on a computer for the real fight!"],
+    youLose: ["Ha! I win!", "Still the boss, even on mobile.", "Come back on a computer if you want a REAL rematch."],
+    endWin: [{ text: "Good grief.", sound: V.goodgrief, bubble: true }, "* YOU WON!", "* You beat Galaxi at tic tac toe.", { text: "Thanks for watching!", sound: V.thanksforwatching, bubble: true }],
+    endLose: ["* You lost to Galaxi at tic tac toe.", "* ...It happens.", { text: "Thanks for watching!", sound: V.thanksforwatching, bubble: true }],
+  },
   tired: .85,            // once he's out of attacks and starts over, every attack runs this fast (he's tired)
 
   // what Galaxi says before his next attack, by what you picked on the menu (any turn; a turn's own before wins, its otherwise is the fallback).

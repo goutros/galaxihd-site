@@ -152,9 +152,66 @@
     // after the blink: the opening dialogue (first time, or R on the death screen), then Galaxi attacks first, like Sans
     function begin() {
       if (!boss.opening) return toMenu();
-      if (!storyMode) return enemyTurn();
+      if (!storyMode) return first();
       const o = boss.opening, replay = seenOpening; seenOpening = true;
-      say(o.box, () => { boxLine = typing; const lines = typeof o.say === "function" ? o.say(replay) : [...o.say]; state = "talk"; after = () => { boxLine = null; firstFlavor = o.after; enemyTurn(); }; talkLine(lines.shift(), lines); });
+      say(o.box, () => { boxLine = typing; const lines = typeof o.say === "function" ? o.say(replay) : [...o.say]; state = "talk"; after = () => { boxLine = null; firstFlavor = o.after; first(); }; talkLine(lines.shift(), lines); });
+    }
+    // ---------- phone: no fight (you'd need three thumbs), tic-tac-toe instead, best of 3. You're X, Galaxi is O ----------
+    const phone = test && "phone" in test ? test.phone : matchMedia("(hover: none) and (pointer: coarse)").matches; // a touchscreen with no mouse
+    const first = () => phone && boss.phone ? tttStart() : enemyTurn(); // what happens after the opening
+    const TTT = { x: 200, y: 222, s: 80 }, WINS = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]];
+    const MARK = { 1: img("assets/egg/ui/x.png"), 2: img("assets/egg/ui/o.png") }; // 16x16 white: you're X, Galaxi is O
+    const mark = (p, cx, cy) => MARK[p].naturalWidth && ctx.drawImage(MARK[p], cx - 24, cy - 24, 48, 48); // 3x, crisp (smoothing is off)
+    let ttt = null; // { b: 9 cells (0 empty, 1 you, 2 Galaxi), cur, you, him, round, turn, line, at, then }
+    const lineOf = (b, p) => WINS.find(l => l.every(i => b[i] === p));
+    const pickOne = l => l[Math.floor(Math.random() * l.length)];
+    const linesOf = v => [].concat(typeof v === "function" ? v(ttt) : v || []);
+    function talkThen(v, cb) { const ls = linesOf(v); if (!ls.length) return cb(); state = "talk"; after = cb; hit.clear(); tap = null; talkLine(ls.shift(), ls); }
+    function tttStart() { ttt = { b: Array(9).fill(0), cur: 4, you: 0, him: 0, round: 0 }; box.tw = box.th = 0; talkThen(boss.phone.intro, tttRound); }
+    function tttRound() { ttt.b.fill(0); ttt.line = null; ttt.round++; ttt.turn = ttt.round % 2 ? 1 : 2; ttt.at = clock + 700; state = "ttt"; } // you go first in rounds 1 and 3
+    function galaxiMove() { // wins if he can, blocks if he must, otherwise middle then corners; boss.phone.mistake of the time he just guesses
+      const b = ttt.b, free = b.map((v, i) => v ? -1 : i).filter(i => i >= 0);
+      const finish = p => free.find(i => { b[i] = p; const w = lineOf(b, p); b[i] = 0; return w; });
+      if (Math.random() < (boss.phone.mistake ?? .3)) return pickOne(free);
+      const w = finish(2) ?? finish(1); if (w !== undefined) return w;
+      if (!b[4]) return 4;
+      const corners = [0, 2, 6, 8].filter(i => !b[i]); return pickOne(corners.length ? corners : free);
+    }
+    function tttMove(p, i) {
+      ttt.b[i] = p; p === 1 ? sfx.select() : sfx.move();
+      const line = lineOf(ttt.b, p), full = ttt.b.every(Boolean);
+      if (line || full) { ttt.line = line; state = "tttEnd"; ttt.at = clock + 1000; ttt.then = () => tttOver(line ? p : 0); return; }
+      ttt.turn = 3 - p; ttt.at = clock + 650;
+      if (ttt.turn === 2 && Math.random() < (boss.phone.quipChance ?? .35)) bubble = { text: pickOne(boss.phone.quips), n: 0, t: 0, quiet: false, life: 900 };
+    }
+    function tttOver(w) { // w: 1 you won the round, 2 Galaxi did, 0 a draw (doesn't count)
+      if (w === 1) ttt.you++; if (w === 2) ttt.him++;
+      const P = boss.phone, done = ttt.you >= 2 || ttt.him >= 2;
+      talkThen(done ? (ttt.you >= 2 ? P.youWin : P.youLose) : w === 1 ? P.roundWin : w === 2 ? P.roundLose : P.draw, done ? tttEnd : tttRound);
+    }
+    function tttEnd() { const youWon = ttt.you >= 2; ttt = null; box.tw = 575; box.th = 135; foe.spared = youWon; state = "end"; say(linesOf(youWon ? boss.phone.endWin : boss.phone.endLose), exit); }
+    function tttUpdate() {
+      if (state === "tttEnd") { if (clock >= ttt.at) ttt.then(); return; }
+      if (clock < ttt.at) return;
+      if (ttt.turn === 2) return tttMove(2, galaxiMove());
+      const k = ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].find(k => hit.has(k));
+      if (k) { const c = ttt.cur, r = Math.floor(c / 3); ttt.cur = { ArrowLeft: c % 3 ? c - 1 : c, ArrowRight: c % 3 < 2 ? c + 1 : c, ArrowUp: r ? c - 3 : c, ArrowDown: r < 2 ? c + 3 : c }[k]; sfx.move(); }
+      const tapped = tap && inside(tap, TTT.x, TTT.y, TTT.s * 3, TTT.s * 3);
+      if (tapped) ttt.cur = Math.min(2, Math.floor((tap.y - TTT.y) / TTT.s)) * 3 + Math.min(2, Math.floor((tap.x - TTT.x) / TTT.s));
+      if ((tapped || confirm()) && !ttt.b[ttt.cur]) tttMove(1, ttt.cur);
+    }
+    function drawTtt() {
+      const { x, y, s } = TTT;
+      ctx.strokeStyle = "#fff"; ctx.lineWidth = 5; ctx.strokeRect(x - 2.5, y - 2.5, s * 3 + 5, s * 3 + 5);
+      ctx.lineWidth = 3; ctx.beginPath(); for (let k = 1; k < 3; k++) { ctx.moveTo(x + k * s, y); ctx.lineTo(x + k * s, y + s * 3); ctx.moveTo(x, y + k * s); ctx.lineTo(x + s * 3, y + k * s); } ctx.stroke();
+      ttt.b.forEach((v, i) => {
+        const cx = x + (i % 3) * s + s / 2, cy = y + Math.floor(i / 3) * s + s / 2;
+        if (v && !(ttt.line && ttt.line.includes(i) && Math.floor(clock / 150) % 2)) mark(v, cx, cy); // the winning three blink
+      });
+      if (state === "ttt" && ttt.turn === 1 && !phone && !ttt.b[ttt.cur]) { ctx.globalAlpha = .35; mark(1, x + (ttt.cur % 3) * s + s / 2, y + Math.floor(ttt.cur / 3) * s + s / 2); ctx.globalAlpha = 1; } // keyboard cursor
+      text("BEST OF 3", 30, 262, 24, "#fff", "left", SANS);
+      text(`YOU  ${ttt.you}`, 30, 302, 30, "#f00", "left", SANS); text(`GALAXI  ${ttt.him}`, 30, 338, 30, YELLOW, "left", SANS);
+      if (state === "ttt") text(ttt.turn === 1 ? "YOUR TURN" : "...", 610, 302, 26, "#fff", "right", SANS);
     }
     function drawIntro() {
       const fx = btns[0].x + 20, fy = btns[0].y + 21;
@@ -368,6 +425,7 @@
         if (type(talk, dt, boss.voice || 520) && (confirm() || tap)) {
           if (talk.rest.length) talkLine(talk.rest.shift(), talk.rest); else { const cb = after; after = null; talk = null; cb(); }
         }
+      } else if (state === "ttt" || state === "tttEnd") { tttUpdate();
       } else if (state === "menu") {
         // once the box has slid back to full size, the flavor line types out like Undertale's (Z still picks a button right away)
         const line = flavor || "";
@@ -497,6 +555,7 @@
         const cw = ctx.measureText("M").width, jig = () => sb.shake ? Math.round(Math.random() * 2 - 1) : 0; // shake: every letter jitters a pixel, like UNDERTALE's shaky text
         rows.forEach((l, i) => { const s = l.slice(0, Math.max(0, left)); if (sb.shake) [...s].forEach((c, j) => text(c, 422 + j * cw + jig(), 86 + i * 22 + jig(), 24, "#000")); else text(s, 422, 86 + i * 22, 24, "#000"); left -= l.length + 1; });
       }
+      if (ttt) return drawTtt(); // phone mode: the board instead of the box, stats and buttons
       // box
       // the box is always drawn at its sliding size, bottom-anchored, so it grows back into the dialogue box after an attack the
       // same way it shrank into it (the menu's flavor line waits for it to finish)
