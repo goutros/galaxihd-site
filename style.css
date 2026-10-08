@@ -258,7 +258,7 @@
   .menu-btn.glass { position: relative; }
   .menu-btn span { transition: transform .2s ease, opacity .2s ease; }
   .menu-open .menu-btn span:nth-child(1) { transform: translateY(8px) rotate(45deg); }
-  .menu-open .menu-btn span:nth-child(2) { opacity: 0; }
+  .menu-open .menu-btn span:nth-child(2) { opacity: 0; transform: scaleX(0); } /* scale too: iOS Safari doesn't repaint an opacity-only change inside the frosted (backdrop-filter) button */
   .menu-open .menu-btn span:nth-child(3) { transform: translateY(-8px) rotate(-45deg); }
   .panel {
     position: fixed; z-index: 5; top: 76px; left: 16px; width: 220px; overflow: hidden; /* ponytail: no scroll, the menu is short; add max-height + overflow-y if it ever outgrows a phone */
