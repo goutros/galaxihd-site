@@ -159,43 +159,56 @@ window.GALAXI_BOSS = {
   // the speech-bubble lines use Galaxi's recordings; the "* ..." flavor/box lines are Claude placeholders to rewrite
   opening: { box: "* Galaxi notices you found his easter egg.", say: replay => ["So, you found me huh?", "I'm Galaxi, the REAL Galaxi, and I've gone what you'd call TURBO.", replay ? "Pikachu wanted a rematch." : "Wanna see what I can do?"], // replay: R on the death screen
     after: "* Galaxi is waiting for you to mention how cool that just was." },
-  // Lines marked "draft" below were written by Claude in Galaxi's style for him to polish; everything else is his
+  // All dialogue approved by Galaxi (2026-10-09); some lines were first drafted by Claude in his style
   turns: [
     { say: [{ text: "Go, Pikachu!", sound: V.gopikachu, go: true }], attack: "pokeball", box: [230, 150], time: 9500,
-      flavor: foe => foe.loop ? ["* Pikachu looks tired too.", "* Galaxi is recycling content."] : "* You actually do think that was pretty cool." }, // loop lines: draft
+      flavor: foe => foe.loop ? ["* Pikachu looks tired too.", "* Galaxi is recycling content."] : "* You actually do think that was pretty cool." },
     { before: foe => foe.last === "Compliment" ? ["Don't think because you're so nice I'll go easy on you!"] : null, // (he does: the toned-down blasters)
       otherwise: ["Huh, not gonna say anything?", "That was pretty rude of you."], // a pick with no react lines (e.g. Ask for mods)
       say: [{ text: "Ray of Death.", sound: V.rayofdeath }], attack: "blasters", box: [240, 170], time: 11000, // ends itself (a.end)
-      flavor: ["* Galaxi's eyes are glowing.", "* Galaxi blows on his finger like it's a smoking gun.", "* Galaxi is pretending he isn't out of breath."] }, // draft
+      flavor: ["* Galaxi's eyes are glowing.", "* Galaxi blows on his finger like it's a smoking gun.", "* Galaxi is pretending he isn't out of breath."] },
     { say: [{ text: "Gotta go fast!", sound: V.gottagofast }], flavor: "* You can't figure out why but you suddenly feel... faster.", attack: "sonic", box: [300, 110], time: 12000,
-      otherwise: ["You know what this fight needs?", "Speed."] }, // draft
+      otherwise: ["You know what this fight needs?", "Speed."] },
     { sneak: true, attack: "lorem", box: [575, 135], time: 25000, // the meta turn: pretends to skip, then ends itself (a.end)
-      flavor: ["* Galaxi won't stop talking.", "* Galaxi forgot what he was saying.", "* Your ears are still ringing from all the typing."] }, // draft
+      flavor: ["* Galaxi won't stop talking.", "* Galaxi forgot what he was saying.", "* Your ears are still ringing from all the typing."] },
     { say: [{ text: "I have so many voice lines.", sound: V.ihavesomanyvoicelines }, { text: "Kablooey!", sound: V.jebluey }], attack: "kablooey", box: [240, 170], time: 25000, // ends itself (a.end)
-      flavor: ["* Galaxi is having fun.", "* Galaxi is very proud of that one.", "* Galaxi checks if you looked impressed."], // draft
-      otherwise: ["Okay, big one coming.", "I've been saving this."] }, // draft
+      flavor: ["* Galaxi is having fun.", "* Galaxi is very proud of that one.", "* Galaxi checks if you looked impressed."],
+      otherwise: ["Okay, big one coming.", "I've been saving this."] },
     { say: [{ text: "JoJo no Kimyou na Bouken!", sound: V.jojonokiminionaboken }, { text: "The World!", sound: V.theworld, go: true }], attack: "theworld", box: [260, 170], time: 20000, // ends itself (a.end) after 2 loops, ~11s,
-      flavor: ["* Time feels weird.", "* Galaxi is still doing the pose.", "* You're pretty sure you lost a few seconds."], // draft
-      otherwise: ["Have you ever watched JoJo?", "Doesn't matter. You're about to."] }, // draft
+      flavor: ["* Time feels weird.", "* Galaxi is still doing the pose.", "* You're pretty sure you lost a few seconds."],
+      otherwise: ["Have you ever watched JoJo?", "Doesn't matter. You're about to."] },
     { say: [{ text: "It's a me!", sound: V.itsame }], attack: "mario", soul: "mario", box: [320, 160], time: 17500, // 4 avalanches of 3.8s, 3.9s apart
-      flavor: ["* Galaxi is pretending to be a boss.", "* Galaxi hums the overworld theme.", "* Galaxi swears he got all the coins once."], // draft
-      otherwise: ["Okay, last attack.", "...Probably."] }, // draft
+      flavor: ["* Galaxi is pretending to be a boss.", "* Galaxi hums the overworld theme.", "* Galaxi swears he got all the coins once."],
+      otherwise: ["Okay, last attack.", "...Probably."] },
   ],
   // On a phone (touchscreen, no mouse) there's no fight: after the opening Galaxi notices and you play tic-tac-toe instead, best of 3
-  // (draws don't count). You're X (assets/egg/ui/x.png), he's O (o.png), both 16x16 white. Idea and beats by Galaxi; all wording below is a Claude draft for him to polish.
+  // (draws don't score). You're X (assets/egg/ui/x.png), he's O (o.png), both 16x16 white. Idea and beats by Galaxi; wording approved by him.
   phone: {
     intro: ["Wait.", "Are you on your PHONE right now?", "...", "Okay, this is awkward.", "I can't fight you like this. You'd need like three thumbs.", "...",
       "Okay. Compromise.", "Tic tac toe. Best of 3.", "You're X, I'm O. Tap a square."],
+    // the board grows each time you're about to win: best of 3 on 3x3, then best of 5 on 5x3, then a last-ditch 5x5 where it's 4 in a row
+    stages: [
+      { cols: 3, rows: 3, need: 3, target: 2 },
+      { cols: 5, rows: 3, need: 3, target: 3, say: ["...", "Okay. OKAY.", "Best of 5.", "And the board's bigger now. Because I said so."] },
+      { cols: 5, rows: 5, need: 4, target: 4, say: ["No. No no no.", "Best of 7!", "5 by 5! Four in a row!", { text: "This is my FINAL FORM.", shake: true }] },
+    ],
     mistake: .3,         // how often he just guesses instead of playing properly (0 = never loses, 1 = random)
     quipChance: .35,     // how often he says something while it's his move
     quips: ["Hmm.", "Bold.", "I see what you're doing.", "Calculated.", "...Okay, that one's a guess."],
     roundWin: () => any([["Hey! I wasn't ready!"], ["Okay. Beginner's luck."], ["That was the warm-up.", "...Obviously."]]),
     roundLose: () => any([["Ha! O wins!"], ["Tic tac TOE.", "...That's not a joke, I just like saying it."], ["I'm basically a tic tac toe pro.", "I think..."]]),
-    draw: () => any([["A draw?", "Okay, again."], ["Nobody wins.", "Classic tic tac toe."]]),
-    youWin: ["...", "You beat me. At tic tac toe.", "On a PHONE.", "Okay, fine. You win this one.", "Come back on a computer for the real fight!"],
-    youLose: ["Ha! I win!", "Still the boss, even on mobile.", "Come back on a computer if you want a REAL rematch."],
-    endWin: [{ text: "Good grief.", sound: V.goodgrief, bubble: true }, "* YOU WON!", "* You beat Galaxi at tic tac toe.", { text: "Thanks for watching!", sound: V.thanksforwatching, bubble: true }],
-    endLose: ["* You lost to Galaxi at tic tac toe.", "* ...It happens.", { text: "Thanks for watching!", sound: V.thanksforwatching, bubble: true }],
+    // one line per draw in a row (a win or loss resets it); one more draw than this list and he rage quits
+    draws: [["A draw?", "Okay, again."], ["Another draw.", "Huh."], ["Three draws in a row?", "Are you copying me?"], ["Okay, stop drawing.", "One of us has to WIN."],
+      ["FIVE draws.", "I'm losing my mind."], [{ text: "I swear if this happens ONE more time...", shake: true }]],
+    rageQuit: [{ text: "THAT'S IT!", shake: true }, "I'm done!", "This game is RIGGED!", "Tic tac toe is a solved game anyway!", { text: "You're kidding!", sound: V.yourekidding }],
+    youWin: ["...", "I made the board BIGGER.", "And you still won.", "Okay, fine. You win. For real this time.", "Come back on a computer for the real fight!"],
+    youLose: t => t.stage ? ["Ha! I win!", "...Don't look at the board size.", "Come back on a computer if you want a REAL rematch."]
+      : ["Ha! I win!", "Still the boss, even on mobile.", "Come back on a computer if you want a REAL rematch."],
+    end: { // the box lines after each ending
+      win: [{ text: "Good grief.", sound: V.goodgrief, bubble: true }, "* YOU WON!", "* You beat Galaxi at tic tac toe.", "* Even the 5x5.", { text: "Thanks for watching!", sound: V.thanksforwatching, bubble: true }],
+      lose: ["* You lost to Galaxi at tic tac toe.", "* ...It happens.", { text: "Thanks for watching!", sound: V.thanksforwatching, bubble: true }],
+      rage: ["* Galaxi flipped the board.", "* Galaxi rage quit.", "* ...You win? Technically?", { text: "Thanks for watching!", sound: V.thanksforwatching, bubble: true }],
+    },
   },
   tired: .85,            // once he's out of attacks and starts over, every attack runs this fast (he's tired)
 
@@ -203,32 +216,32 @@ window.GALAXI_BOSS = {
   // nth(foe, pick, [1st time, 2nd time, ...]): after the list runs out it picks one of the later ones at random. any([...]): one at random
   react: {
     FIGHT: foe => {
-      if (foe.hp <= foe.max * .35 && !foe.flags.ow) { foe.flags.ow = true; return ["Okay, OW.", "Can we talk about this?", "...No? Okay."]; } // draft
-      if (!foe.lastHit) return any([["Ha! Missed!", "...I mean, obviously. I'm TURBO."], ["Do you want me to stand still?", "Because I'm not gonna."], ["Miss!", "Skill issue."]]); // draft
-      if (foe.lastHit >= 28) return any([["OW.", "Okay, that one actually hurt."], ["HEY! Not the face!", "I need that for thumbnails!"]]); // a near-perfect hit, draft
+      if (foe.hp <= foe.max * .35 && !foe.flags.ow) { foe.flags.ow = true; return ["Okay, OW.", "Can we talk about this?", "...No? Okay."]; }
+      if (!foe.lastHit) return any([["Ha! Missed!", "...I mean, obviously. I'm TURBO."], ["Do you want me to stand still?", "Because I'm not gonna."], ["Miss!", "Skill issue."]]);
+      if (foe.lastHit >= 28) return any([["OW.", "Okay, that one actually hurt."], ["HEY! Not the face!", "I need that for thumbnails!"]]); // a near-perfect hit
       return nth(foe, "FIGHT", [["You just don't know when to quit huh?", "Don't worry, me neither."],
-        ["That tickled.", "...A lot. It tickled a lot."], ["Is that all you've got?", "...Please say yes."], ["You know I have to edit this later, right?"]]); // 2nd on: draft
+        ["That tickled.", "...A lot. It tickled a lot."], ["Is that all you've got?", "...Please say yes."], ["You know I have to edit this later, right?"]]);
     },
     Check: foe => nth(foe, "Check", [["Did you just check me out?", "I have a girlfriend you know..."],
-      ["You're checking me out AGAIN?", "She's gonna hear about this."], ["Okay, take a picture.", "It'll last longer."], ["Stop reading my stats!", "Those are private!"]]), // 2nd on: draft
+      ["You're checking me out AGAIN?", "She's gonna hear about this."], ["Okay, take a picture.", "It'll last longer."], ["Stop reading my stats!", "Those are private!"]]),
     Compliment: foe => nth(foe, "Compliment", [["You're so friendly, ... why?", { text: "WHY ARE YOU SO FRIENDLY?!", shake: true }],
-      ["Stop it.", "...No wait, keep going."], ["I'm not blushing!", "That's just my RGB."], ["You're doing this on purpose, aren't you?", { text: "...It's working.", shake: true }]]), // 2nd on: draft
+      ["Stop it.", "...No wait, keep going."], ["I'm not blushing!", "That's just my RGB."], ["You're doing this on purpose, aren't you?", { text: "...It's working.", shake: true }]]),
     Subscribe: foe => nth(foe, "Subscribe", [["Sorry, force of habit..."], ["You can't subscribe twice.", "I checked."],
-      ["Did you just ring the bell?", "...All notifications?", "Okay that's actually really nice. Stop."]]), // 2nd on: draft
-    "Ask for mods": foe => nth(foe, "Ask for mods", [null, ["Okay, okay. A real one this time.", "Create. It's always Create."], ["I review mods for a living, you know.", "You could just watch the videos."]]), // draft
-    "Heal me": foe => nth(foe, "Heal me", [null, ["Still no."], ["Heal yourself, I'm busy being a boss."]]), // draft
+      ["Did you just ring the bell?", "...All notifications?", "Okay that's actually really nice. Stop."]]),
+    "Ask for mods": foe => nth(foe, "Ask for mods", [null, ["Okay, okay. A real one this time.", "Create. It's always Create."], ["I review mods for a living, you know.", "You could just watch the videos."]]),
+    "Heal me": foe => nth(foe, "Heal me", [null, ["Still no."], ["Heal yourself, I'm busy being a boss."]]),
     "Golden Carrot": ["Best food in the game by the way.", "I think..."],
     "Energy Drink": ["I used to drink like 3 of those a day!", "Fun fact ... lol."],
     Spare: foe => nth(foe, "Spare", [["Do you think that little of me?", "I should teach kids like you a lesson...", { text: "Let's speed things up!", sound: V.letsspeeditup }],
-      ["Again?!", "You really think I'm a pushover, huh?"], ["Keep pressing it.", "See what happens."]]), // then the attack runs at spareRush; 2nd on: draft
+      ["Again?!", "You really think I'm a pushover, huh?"], ["Keep pressing it.", "See what happens."]]), // then the attack runs at spareRush
   },
   // the menu's flavor line after that attack, by the same pick (otherwise the turn's own flavor)
   reactFlavor: {
-    "Heal me": foe => nth(foe, "Heal me", ["* Galaxi doesn't want to heal you, by the way.", "* Galaxi still doesn't want to heal you.", "* Galaxi is being really stubborn about this."]), // 2nd on: draft
+    "Heal me": foe => nth(foe, "Heal me", ["* Galaxi doesn't want to heal you, by the way.", "* Galaxi still doesn't want to heal you.", "* Galaxi is being really stubborn about this."]),
     "Golden Carrot": "* Galaxi is larping Minecraft wiki knowledge.", "Energy Drink": "* You think Galaxi has a caffeine addiction." },
 
   // lines that can come up before any attack, ahead of the react lines: retries (by how many times you've died this visit), your HP getting low,
-  // and Galaxi running out of attacks (each time the turns start over). All drafts
+  // and Galaxi running out of attacks (each time the turns start over)
   aside: ({ foe, player, turn, deaths, story, first }) => {
     const out = [];
     if (first && !story && deaths) out.push(...(deaths === 10 ? ["...That's ten deaths.", "Are you okay? Like, genuinely?"]
@@ -244,20 +257,20 @@ window.GALAXI_BOSS = {
 
   acts: [
     { name: "Check", run: foe => nth(foe, "Check", [["* GALAXI - ATK 5 DEF 1", "* Finds the best Minecraft mods. Even makes his own."],
-      ["* GALAXI - ATK 5 DEF 1", "* Still finds the best Minecraft mods.", "* Still makes his own."], [{ text: "Who's that Pokemon?", sound: V.whosthatpokemon, bubble: true }, "* It's Galaxi.", "* It's always been Galaxi."]]) }, // 2nd on: draft
+      ["* GALAXI - ATK 5 DEF 1", "* Still finds the best Minecraft mods.", "* Still makes his own."], [{ text: "Who's that Pokemon?", sound: V.whosthatpokemon, bubble: true }, "* It's Galaxi.", "* It's always been Galaxi."]]) },
     { name: "Compliment", run: foe => { foe.flags.nice = (foe.flags.nice || 0) + 1; const aha = { text: "Aha!", sound: V.ahaha, bubble: true };
       return nth(foe, "Compliment", [["* You tell Galaxi his videos go hard.", aha], ["* You tell Galaxi his thumbnails are clean.", aha],
-        ["* You tell Galaxi his mods never crash.", "* ...They do, but he takes it.", aha], ["* You tell Galaxi he's your favourite YouTuber.", aha]]); } }, // 2nd on: draft
+        ["* You tell Galaxi his mods never crash.", "* ...They do, but he takes it.", aha], ["* You tell Galaxi he's your favourite YouTuber.", aha]]); } },
     { name: "Subscribe", run: foe => {
-      if (foe.flags.subscribed) return foe.uses.Subscribe > 2 ? ["* You hit the bell.", "* All notifications.", { text: "Blurple!", sound: V.blurple, bubble: true }] // draft
+      if (foe.flags.subscribed) return foe.uses.Subscribe > 2 ? ["* You hit the bell.", "* All notifications.", { text: "Blurple!", sound: V.blurple, bubble: true }]
         : ["* You're already subscribed.", { text: "Blurple!", sound: V.blurple, bubble: true }];
       foe.flags.subscribed = true;
       return ["* You smash that subscribe button.", { text: "Like and subscribe!", sound: V.likeandsubscribe, bubble: true }];
     } },
     { name: "Ask for mods", run: foe => nth(foe, "Ask for mods", [["* You ask for a mod recommendation.", { text: "Adventure Time!", sound: V.adventuretime, bubble: true }, "* ...that isn't a mod."],
-      ["* You ask for a REAL mod recommendation.", { text: "Adventure Time!", sound: V.adventuretime, bubble: true }, "* He's doing this on purpose."], ["* You ask one more time.", "* Galaxi pretends he can't hear you."]]) }, // 2nd on: draft
+      ["* You ask for a REAL mod recommendation.", { text: "Adventure Time!", sound: V.adventuretime, bubble: true }, "* He's doing this on purpose."], ["* You ask one more time.", "* Galaxi pretends he can't hear you."]]) },
     { name: "Heal me", run: foe => nth(foe, "Heal me", [["* You ask Galaxi to heal you.", { text: "I'd heal you but I don't want to.", sound: V.idhealyoubutidontwantto, bubble: true }],
-      ["* You ask Galaxi to heal you. Nicely.", { text: "I'd heal you but I don't want to.", sound: V.idhealyoubutidontwantto, bubble: true }, "* He said it the exact same way."], ["* You beg.", "* Galaxi looks the other way."]]) }, // 2nd on: draft
+      ["* You ask Galaxi to heal you. Nicely.", { text: "I'd heal you but I don't want to.", sound: V.idhealyoubutidontwantto, bubble: true }, "* He said it the exact same way."], ["* You beg.", "* Galaxi looks the other way."]]) },
   ],
 
   items: [

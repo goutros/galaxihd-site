@@ -7,6 +7,14 @@
   const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const fmt = d => new Date(d).toLocaleDateString(undefined, { month: "short", year: "numeric" });
   const views = n => new Intl.NumberFormat(undefined, { notation: "compact", maximumFractionDigits: 1 }).format(n);
+  // a tile's caption: the title (its own span, so phones can cut it to 2 lines) and "date · views" (phones show just the views)
+  const caption = (title, v) => {
+    const cap = document.createElement("figcaption"), t = document.createElement("time");
+    cap.append(Object.assign(document.createElement("span"), { className: "vt", textContent: title }));
+    t.dateTime = v.published;
+    t.append(Object.assign(document.createElement("span"), { className: v.views ? "on-desktop" : "", textContent: fmt(v.published) + (v.views ? " · " : "") }), v.views ? `${views(v.views)} views` : "");
+    cap.append(t); return cap;
+  };
   const cols = grid => getComputedStyle(grid).gridTemplateColumns.split(" ").length;
   let current = null; // the open <figure>
 
@@ -161,8 +169,7 @@
     strip.querySelectorAll(".skel-tile").forEach(t => t.remove());
     strip.prepend(...list.map(v => {
       const fig = document.createElement("figure"); fig.className = "vid"; fig.video = v;
-      const cap = document.createElement("figcaption"); cap.textContent = v.title.replace(/\s*#\S+/g, ""); // hashtags are for YouTube search, not the tile
-      const t = document.createElement("time"); t.dateTime = v.published; t.textContent = fmt(v.published) + (v.views ? ` · ${views(v.views)} views` : ""); cap.append(t);
+      const cap = caption(v.title.replace(/\s*#\S+/g, ""), v); // hashtags are for YouTube search, not the tile
       const b = thumb(fig); b.onclick = () => embed(fig, false);
       fig.thumbBtn = b; fig.append(b, cap); seen.observe(fig);
       return fig;
@@ -189,8 +196,7 @@
     } catch { grid.innerHTML = ""; return; }
     grid.tiles = list.map(v => {
       const fig = document.createElement("figure"); fig.className = "vid"; fig.video = v;
-      const cap = document.createElement("figcaption"); cap.textContent = v.title;
-      const t = document.createElement("time"); t.dateTime = v.published; t.textContent = fmt(v.published) + (v.views ? ` · ${views(v.views)} views` : ""); cap.append(t);
+      const cap = caption(v.title, v);
       fig.append(thumb(fig), cap);
       return fig;
     });
@@ -246,13 +252,13 @@
 
 
 // Mario Galaxy-style pointer: an upright pixel star (sways with movement) replaces the mouse cursor and sheds a few
-// twinkling star sprites as it moves. Mouse/trackpad only; the normal cursor is kept on touch screens.
+// twinkling star sprites as it moves. On touch screens there's no star cursor: dragging a finger (scrolling included) sheds the sparkles.
 (() => {
-  if (!matchMedia("(pointer: fine)").matches) return;
-  const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const fine = matchMedia("(pointer: fine)").matches, calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (!fine && calm) return;
   const base = document.querySelector('link[rel="stylesheet"][href$="style.css"]').href.replace(/style\.css$/, "assets/");
   const star = new Image(); star.src = base + "cursor-star.png"; star.alt = ""; star.id = "cursor";
-  document.body.append(star); document.documentElement.classList.add("star-cursor");
+  if (fine) { document.body.append(star); document.documentElement.classList.add("star-cursor"); }
 
   const c = document.getElementById("fx"), x = c.getContext("2d");
   const sprites = ["star-s", "star-s", "star-s", "star-m"].map(n => Object.assign(new Image(), { src: base + n + ".png" }));
@@ -270,16 +276,24 @@
     // sway: lean toward the direction of travel, settle upright when the mouse stops
     if (px >= 0) star.style.rotate = `${Math.max(-18, Math.min(18, (e.clientX - px) * 1.2))}deg`;
     clearTimeout(settle); settle = setTimeout(() => star.style.rotate = "0deg", 90);
-    // a few sparkles per distance travelled, so a slow drift barely sheds and a quick flick glitters
-    carry += Math.hypot(e.clientX - px, e.clientY - py) / 38;
+    shed(e.clientX, e.clientY);
+  });
+  // a few sparkles per distance travelled, so a slow drift barely sheds and a quick flick glitters
+  function shed(cx, cy) {
+    carry += Math.hypot(cx - px, cy - py) / 38;
     if (px < 0) carry = 0;
     for (; carry >= 1; carry--) bits.push({
-      img: sprites[Math.random() * 4 | 0], x: e.clientX + (Math.random() - .5) * 14, y: e.clientY + (Math.random() - .5) * 14,
+      img: sprites[Math.random() * 4 | 0], x: cx + (Math.random() - .5) * 14, y: cy + (Math.random() - .5) * 14,
       vx: (Math.random() - .5) * .6, vy: .2 + Math.random() * .5, life: 1, spin: Math.random() * 6
     });
-    px = e.clientX; py = e.clientY;
+    px = cx; py = cy;
     if (!running && bits.length) { running = true; requestAnimationFrame(tick); }
-  });
+  }
+  // touch: touchmove keeps firing while the page scrolls under the finger (pointermove stops), and passive never blocks the scroll
+  if (!calm) {
+    addEventListener("touchstart", e => { px = py = -99; shed(e.touches[0].clientX, e.touches[0].clientY); }, { passive: true });
+    addEventListener("touchmove", e => shed(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
+  }
   // fade out over the YouTube player and when leaving the window: a cross-origin iframe never reports the mouse
   // position, so the star can't follow inside it; the player shows the normal cursor instead
   document.addEventListener("mouseout", e => {
