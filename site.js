@@ -1,3 +1,5 @@
+const ME = new URL(document.currentScript.src), ROOT = new URL(".", ME).href; // site.js sits at the site root: every page finds assets from here
+const BUILD = ME.search; // "?v=..." from the page's own <script> tag, passed on to the egg scripts so a new publish is never served stale
 // video grids: skeleton tiles while loading, thumbnails fade in, the YouTube player only loads on click.
 // One video plays at a time; it opens full-width in the top row of its box, the other tiles slide around
 // it (FLIP), then the page scrolls to centre it. Rows are always filled: tiles that would leave a gap stay hidden.
@@ -256,7 +258,7 @@
 (() => {
   const fine = matchMedia("(pointer: fine)").matches, calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
   if (!fine && calm) return;
-  const base = document.querySelector('link[rel="stylesheet"][href$="style.css"]').href.replace(/style\.css$/, "assets/");
+  const base = ROOT + "assets/";
   const star = new Image(); star.src = base + "cursor-star.png"; star.alt = ""; star.id = "cursor";
   if (fine) { document.body.append(star); document.documentElement.classList.add("star-cursor"); }
 
@@ -354,7 +356,7 @@ document.querySelectorAll("[data-stat]").forEach(async el => {
 (() => {
   const sky = document.createElement("div"); sky.id = "stars"; sky.setAttribute("aria-hidden", "true");
   document.body.prepend(sky);
-  const base = document.querySelector('link[rel="stylesheet"][href$="style.css"]').href.replace(/style\.css$/, "assets/");
+  const base = ROOT + "assets/";
   const sprites = [["star-s", 3, 6], ["star-m", 5, 3], ["star-l", 7, 1]]; // name, pixel size, weight (small ones most common)
   const pick = () => { let r = Math.random() * 10; for (const s of sprites) if ((r -= s[2]) < 0) return s; return sprites[0]; };
   const W = innerWidth, H = innerHeight, n = Math.round(W * H / 14000), gap = 56, placed = [];
@@ -372,7 +374,7 @@ document.querySelectorAll("[data-stat]").forEach(async el => {
 
 // Discord bar: a few of the page's twinkling stars, gold, scattered behind the text
 document.querySelectorAll(".discord.galaxi").forEach(bar => {
-  const base = document.querySelector('link[rel="stylesheet"][href$="style.css"]').href.replace(/style\.css$/, "assets/discord/");
+  const base = ROOT + "assets/discord/";
   const sky = document.createElement("span"); sky.className = "gx-sky"; sky.setAttribute("aria-hidden", "true");
   for (let i = 0; i < 9; i++) {
     const [name, px] = [["star-s", 3], ["star-s", 3], ["star-m", 5], ["star-l", 7]][i % 4], img = new Image();
@@ -558,8 +560,8 @@ document.querySelectorAll("[data-live]").forEach(el => {
 // opens. Stop for 1.5s and the cracks heal. Cracks + stone sounds: Minecraft 1.21.1 (assets via mcasset.cloud) in assets/egg/mc/.
 // The fight code (assets/egg/) only downloads when it's triggered. Content lives in assets/egg/boss.js.
 (() => {
-  const base = document.querySelector('link[rel="stylesheet"][href$="style.css"]').href.replace(/style\.css$/, "");
-  const load = src => new Promise((ok, no) => { const s = document.createElement("script"); s.src = base + src; s.onload = ok; s.onerror = no; document.head.append(s); });
+  const base = ROOT;
+  const load = src => new Promise((ok, no) => { const s = document.createElement("script"); s.src = base + src + BUILD; s.onload = ok; s.onerror = no; document.head.append(s); });
   const MC = base + "assets/egg/mc/", STAGES = 10, HOLD = 120; // ms per stage while holding
   const img = src => Object.assign(new Image(), { src });
   let cracks = null; // loaded on the first hit
