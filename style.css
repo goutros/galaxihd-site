@@ -388,7 +388,8 @@
   .mod b { display: block; font-size: 1.05rem; }
   .mod span { font-size: .88rem; color: var(--muted); }
   .mod small { display: block; margin-top: 4px; color: var(--sky-deep); font-weight: 700; }
-  .mod-links { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .mod { flex-wrap: wrap; } .mod > span:not(.mod-links) { flex: 1; min-width: 0; }
+  .mod-links { display: flex; flex-wrap: wrap; gap: 6px; margin: -6px 0 0 78px; flex: 1 0 calc(100% - 78px); } /* desktop: under the text, lined up with it (78 = icon + gap) */
   .cf { --brand: #f16436; }
   .mr { --brand: #00af5c; }
   .head { display: flex; align-items: center; gap: 8px; }
@@ -504,7 +505,13 @@
     .discord.galaxi { display: grid; grid-template-columns: auto 1fr; column-gap: 14px; row-gap: 8px; align-items: center; padding: 12px 16px; }
     .discord.galaxi .gx-logo { grid-row: span 2; }
     .discord.galaxi .gx-text { min-width: 0; align-self: end; }
-    .discord.galaxi .discord-go { margin-left: 0; justify-self: end; align-self: end; min-height: 44px; display: inline-flex; align-items: center; padding: 0 20px; }
+    .discord.galaxi { row-gap: 6px; padding: 10px 14px; }
+    .discord.galaxi .discord-go { margin-left: 0; justify-self: end; align-self: start; min-height: 36px; display: inline-flex; align-items: center; padding: 0 16px; } /* tucked under the text, level with the logo's bottom */
+    /* mod cards: icon + text on top, the store buttons side by side in their own full-width row (they stacked in the narrow text column) */
+    .mod { display: grid; grid-template-columns: 56px 1fr; column-gap: 12px; row-gap: 10px; }
+    .mod img { width: 56px; height: 56px; }
+    .mod-links { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0; }
+    .mod-links .chip { justify-content: center; min-height: 40px; }
     /* video and Short tiles: titles cut to 2 lines, just the view count under them (the date is desktop-only) */
     .vid .vt { display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
     #latest .vid figcaption, .shorts figcaption { padding: 6px 10px 8px; }
