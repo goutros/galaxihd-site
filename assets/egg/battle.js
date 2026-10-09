@@ -54,6 +54,7 @@
 
     // ---------- sound: a short square-wave blip per letter, pitch from boss.voice ----------
     let ac = null;
+    const vary = x => boss.vary ? boss.vary(x) : x; // boss.js one(...): pick a variant (no repeats) wherever its text is used
     const sim = !!(test && test.sim); // tools/sim.html: silent, no animation loop, the sim steps the fight itself (__egg.tick)
     const blip = (freq = 440, len = .045, vol = .06, type = "square") => { if (sim) return;
       try {
@@ -155,7 +156,7 @@
       if (!boss.opening) return toMenu();
       if (!storyMode) return first();
       const o = boss.opening, replay = seenOpening; seenOpening = true;
-      say(o.box, () => { boxLine = typing; const lines = typeof o.say === "function" ? o.say(replay) : [...o.say]; state = "talk"; after = () => { boxLine = null; firstFlavor = o.after; first(); }; talkLine(lines.shift(), lines); });
+      say(o.box, () => { boxLine = typing; const lines = vary(typeof o.say === "function" ? o.say(replay) : [...o.say]); state = "talk"; after = () => { boxLine = null; firstFlavor = o.after; first(); }; talkLine(lines.shift(), lines); });
     }
     // ---------- phone: no fight (you'd need three thumbs), tic-tac-toe instead, best of 3. You're X, Galaxi is O ----------
     const phone = test && "phone" in test ? test.phone : matchMedia("(hover: none) and (pointer: coarse)").matches; // a touchscreen with no mouse
@@ -167,7 +168,7 @@
     const geo = () => { const s = ttt.rows > 3 ? 42 : 70, w = ttt.cols * s; return { s, x: 320 - w / 2, y: 424 - ttt.rows * s }; }; // bottom stays put, the tally sits under it
     const lineOf = (b, p) => ttt.wins.find(l => l.every(i => b[i] === p));
     const pickOne = l => l[Math.floor(Math.random() * l.length)];
-    const linesOf = v => [].concat(typeof v === "function" ? v(ttt) : v || []);
+    const linesOf = v => vary([].concat(typeof v === "function" ? v(ttt) : v || []));
     function talkThen(v, cb) { const ls = linesOf(v); if (!ls.length) return cb(); state = "talk"; after = cb; hit.clear(); tap = null; talkLine(ls.shift(), ls); }
     function tttBoard(n) { // set up stage n: its size, and every run of `need` in a row (across, down, both diagonals)
       const st = boss.phone.stages[n], { cols, rows, need } = st, wins = [];
@@ -240,8 +241,8 @@
     }
 
     // text in the main box: lines typed out one by one, Z to advance, then cb()
-    function say(lines, cb) { queue = [].concat(lines).filter(Boolean); after = cb; state = "text"; nextLine(); }
-    function startLine(l) { const snd = lineSound(l); if (snd) play(snd, boss.voiceVolume ?? 1); return { text: lineText(l), n: 0, t: 0, quiet: !!snd, go: !!(l && l.go), shake: !!(l && l.shake) }; }
+    function say(lines, cb) { queue = [].concat(vary(lines)).filter(Boolean); after = cb; state = "text"; nextLine(); }
+    function startLine(l) { l = vary(l); const snd = lineSound(l); if (snd) play(snd, boss.voiceVolume ?? 1); return { text: lineText(l), n: 0, t: 0, quiet: !!snd, go: !!(l && l.go), shake: !!(l && l.shake) }; }
     // a Galaxi speech line; one marked go: true starts the attack as it's said, and its bubble stays up a moment during the attack
     function talkLine(l, rest) { talk = startLine(l); talk.rest = rest; if (talk.go) { bubble = { ...talk, life: 1600 }; talk = null; const cb = after; after = null; cb(); } }
     function nextLine() { if (!queue.length) { const cb = after; after = null; return cb && cb(); }
@@ -255,12 +256,12 @@
     function enemyTurn() {
       if (foe.hp <= 0) return win();
       const t = boss.turns[turn % boss.turns.length]; foe.loop = Math.floor(turn / boss.turns.length); turn++; // loop: how many times he's run out of attacks
-      const fl = v => { v = typeof v === "function" ? v(foe, player) : v; return Array.isArray(v) ? (boss.pick ? boss.pick(v) : v[Math.floor(Math.random() * v.length)]) : v; }; // a list of flavor lines: one at random (boss.pick: no repeats)
-      flavor = firstFlavor || fl((boss.reactFlavor || {})[foe.last]) || fl(t.flavor) || flavor; firstFlavor = null;
+      const fl = v => { v = typeof v === "function" ? v(foe, player) : v; return vary(Array.isArray(v) ? (boss.pick ? boss.pick(v) : v[Math.floor(Math.random() * v.length)]) : v); }; // a list of flavor lines: one at random (boss.pick: no repeats)
+      flavor = vary(firstFlavor) || fl((boss.reactFlavor || {})[foe.last]) || fl(t.flavor) || flavor; firstFlavor = null;
       if (t.sneak) { firstTurn = false; ready = t; return dodge(t); } // sneak: no speech, no box resize, no heart glide; the attack runs the show (it starts looking like the menu)
       const aside = boss.aside ? boss.aside({ foe, player, turn: turn - 1, deaths, story: storyMode, first: firstTurn }) || [] : []; firstTurn = false; // lines that can come up on any turn (retries, low HP, out of attacks)
       const r = (boss.react || {})[foe.last];
-      const lines = [].concat(aside, storyMode ? (typeof t.before === "function" ? t.before(foe) : t.before) || (typeof r === "function" ? r(foe, player) : r) || t.otherwise || (boss.chatter ? boss.chatter(foe) : null) || [] : [], typeof t.say === "function" ? t.say(foe) : t.say || []); // before: story lines, skipped on a plain retry
+      const lines = vary([].concat(aside, storyMode ? (typeof t.before === "function" ? t.before(foe) : t.before) || (typeof r === "function" ? r(foe, player) : r) || t.otherwise || (boss.chatter ? boss.chatter(foe) : null) || [] : [], typeof t.say === "function" ? t.say(foe) : t.say || [])); // before: story lines, skipped on a plain retry
       // like Undertale: the box shrinks to the attack's size while Galaxi talks, with the SOUL already inside it,
       // and the attack only starts once the box has finished resizing
       box.tw = t.box ? t.box[0] : 160; box.th = t.box ? t.box[1] : 140;
@@ -301,11 +302,11 @@
     }
     function endDodge() {
       const c = boss.concede, quit = c && foe.last === "Compliment" && foe.flags.nice >= c.at; // complimented him enough: he gives up
-      const react = !quit && storyMode && boss.afterAttack ? [].concat(boss.afterAttack({ foe, player, hits: round.hits, damage: round.dmg, attack: round.t && round.t.attack }) || []) : []; // how that attack went
+      const react = !quit && storyMode && boss.afterAttack ? vary([].concat(boss.afterAttack({ foe, player, hits: round.hits, damage: round.dmg, attack: round.t && round.t.attack }) || [])) : []; // how that attack went
       foe.last = null; bullets = []; timers = []; api.musicRate(1); fakeMenu = false;
       if (!quit && react.length) { state = "talk"; bubble = null; after = toMenu; return talkLine(react.shift(), react); }
       if (!quit) return toMenu();
-      const lines = [...c.say]; state = "talk"; after = () => { foe.spare = Infinity; toMenu(); flavor = c.flavor || flavor; }; talkLine(lines.shift(), lines); // SPARE turns yellow
+      const lines = vary([...c.say]); state = "talk"; after = () => { foe.spare = Infinity; toMenu(); flavor = vary(c.flavor) || flavor; }; talkLine(lines.shift(), lines); // SPARE turns yellow
     }
     function win() { state = "end"; say([].concat(boss.onWin(foe)), exit); }
     function spare() { state = "end"; foe.spared = true; sfx.spare(); say([].concat(boss.onSpare(foe)), exit); }
@@ -316,7 +317,7 @@
       setTimeout(sfx.crack, 650);
       setTimeout(() => { sfx.shatter(); shards = Array.from({ length: 6 }, (_, i) => ({ x: soul.x, y: soul.y, vx: (i - 2.5) * 1.3 + Math.random() - .5, vy: -3 - Math.random() * 2 })); }, 1450);
       if (boss.onDeathSound) setTimeout(() => play(boss.onDeathSound, boss.voiceVolume ?? 1), 4000);
-      deadLine = { text: boss.onDeath || "Stay determined!", n: 0, t: 0 };
+      deadLine = { text: vary(boss.onDeath) || "Stay determined!", n: 0, t: 0 };
     }
     function exit() { cleanup(); }
 
@@ -339,7 +340,7 @@
       menuLook(on) { fakeMenu = on; },
       get menuHeart() { const b = btns[menuIx]; return { x: b.x + 20, y: b.y + 21 }; }, // where the menu draws the SOUL on the selected button // draw the buttons exactly like the menu (selected one yellow, the SOUL on it)
       speak: () => speak(boss.voice), // one of Galaxi's voice blips
-      say(text, ms = 1500) { bubble = { text, n: 0, t: 0, quiet: false, life: ms }; }, // Galaxi's speech bubble, typed with his voice blips, up for ms once typed
+      say(text, ms = 1500) { text = vary(text); bubble = { text, n: 0, t: 0, quiet: false, life: ms }; }, // Galaxi's speech bubble, typed with his voice blips, up for ms once typed
       damage(n) { // Sans-style: no flashing i-frames, so it can tick every few frames (a quieter hurt sound each time)
         if (foe.last === "Compliment") n = Math.ceil(n / 2);
         player.hp = Math.max(0, player.hp - n); round.hits++; round.dmg += n; play(SFX.hurt1, .4); if (player.hp <= 0) gameOver(); },
@@ -534,7 +535,7 @@
       }
       if (name === "MERCY") sub = { options: [{ label: "Spare", color: foe.spare >= (boss.spareAt || 1) ? YELLOW : "#fff" }, { label: "Flee" }], cols: 1, pick: (o, i) => { picked(o.label);
         if (i === 1) { sfx.flee(); return say(boss.onFlee || "* You fled.", exit); }
-        if (foe.spare >= (boss.spareAt || 1)) { const l = [...(boss.concede?.spared || [])]; if (!l.length) return spare(); state = "talk"; after = spare; return talkLine(l.shift(), l); }
+        if (foe.spare >= (boss.spareAt || 1)) { const l = vary([].concat(boss.concede?.spared || [])); /* spared can be a one(...) of whole exchanges */ if (!l.length) return spare(); state = "talk"; after = spare; return talkLine(l.shift(), l); }
         say(boss.notSpareable || "* ...", enemyTurn);
       } };
     }

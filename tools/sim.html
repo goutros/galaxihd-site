@@ -91,7 +91,7 @@ async function play(opts, choose, log, label) {
   document.getElementById("ut-battle")?.querySelector("button")?.click(); window.__egg = undefined;
   startBattle(GALAXI_BOSS, "../", { sim: true, story: true, ...opts });
   const E = window.__egg; let menus = 0, aimWait = 0, holdHp = false, t = 0, prev = "", died = 0;
-  const see = s => { s = s && (typeof s === "string" ? s : s.text); if (s) log.add(s); };
+  const see = s => { s = s && (typeof s === "string" ? s : s.text); if (s && typeof s !== "string") log.add("UNRESOLVED: " + JSON.stringify(s).slice(0, 80)); else if (s) log.add(s); }; // UNRESOLVED: a one(...) that reached the screen as an object
   for (; t < (opts.limit || 400000) && document.getElementById("ut-battle"); t += FRAME) {
     const st = E.state; if (st === "dead" && prev !== "dead") died++; prev = st;
     see(E.talk); see(E.typing); see(E.bubble); see(E.deadLine); if (st === "menu") see(E.flavor);
@@ -151,7 +151,7 @@ async function dialogue() {
   await route("phone: rage", { phone: true, ttt: draw }, () => "stop");
   for (let i = 0; i < 6; i++) await route(`phone: mixed ${i}`, { phone: true, ttt: E => { if (E.ttt.turn === 1) { const free = E.ttt.b.map((v, j) => v ? -1 : j).filter(j => j >= 0); tapCell(E, pick(free)); } } }, () => "stop");
   const seen = [...log].map(clean), unseen = [...all].filter(s => !seen.some(v => v === clean(s)));
-  return { catalogue: all.size, seen: [...all].length - unseen.length, unseen, routes };
+  return { catalogue: all.size, seen: [...all].length - unseen.length, unresolved: [...log].filter(l => l.startsWith("UNRESOLVED")), unseen, routes };
 }
 let zDown = false; // a square is picked with the keyboard (cursor + Z): a hidden pane has no size, so a tap can't land on the board
 function tapCell(E, i) { E.ttt.cur = i; zDown = !zDown; E.keys(zDown ? ["z"] : []); }
