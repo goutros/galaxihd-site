@@ -117,7 +117,7 @@ function starBlaster(a, x, y, ang, o = {}) {
         spin: (Math.random() < .5 ? -1 : 1) * a.random(.2, .4), damage, update: b => b.damage = inLane() ? damage : 0 }); } };
   let t = 0;
   a.bullet({ x: x + dx * 300, y: y + dy * 300, w: 1200, h: width, rot: ang, damage: 0, z: -1, // the lane (centred 300px out so the off-screen cull never eats it)
-    update(b, dt) { if ((t += dt) > FIRE + STREAM + TRAIL + 300) b.dead = true; },
+    update(b, dt) { if ((t += dt) > FIRE + STREAM + TRAIL + 300) b.dead = true; b.tell = t > IN && t < FIRE + STREAM + TRAIL; }, // tell: the lane is (or is about to be) full of stars, until the last ones are through (for tools/sim.html's bot; never hurts itself)
     draw(ctx) { const v = TELL(t - IN); if (!v) return; // the lane flashes as the blaster arrives, then it's gone
       ctx.fillStyle = `rgba(255,255,255,${.25 * v})`; ctx.fillRect(-300, -width / 2, 1200, width); } });
   a.bullet({ x: x - dx * 90, y: y - dy * 90, w: 1, h: 1, damage: 0, clip: false, z: 2, line: { x, y, ang, width }, // line: where it fires (handy for test bots)
@@ -132,7 +132,12 @@ function starBlaster(a, x, y, ang, o = {}) {
       ctx.rotate(ang - Math.PI / 2); ctx.drawImage(im, kick - 7 * s, -9.5 * s, 14 * s, 13 * s); } }); // Galaxi's star blaster: its jaw (the sprite's bottom) faces the lane and sits where the beam starts
 }
 
-const any = list => list[Math.floor(Math.random() * list.length)]; // one at random
+// one at random, but from a shuffled deck per list: nothing repeats until the list runs out, never twice in a row, and the decks last
+// the whole page visit (retries too). Lists are matched by their contents, so a list written inline in a function still has one deck
+const DECKS = new Map();
+const any = list => { if (list.length < 2) return list[0]; const k = JSON.stringify(list); let d = DECKS.get(k);
+  if (!d || !d.left.length) { const left = list.map((_, i) => i).sort(() => Math.random() - .5); if (d && left.at(-1) === d.last) left.unshift(left.pop()); d = { left, last: d && d.last }; DECKS.set(k, d); }
+  d.last = d.left.pop(); return list[d.last]; };
 const nth = (foe, pick, list) => { const i = (foe.uses[pick] || 1) - 1; return i < list.length ? list[i] : any(list.length > 1 ? list.slice(1) : list); }; // by how many times you've picked it this fight
 
 window.GALAXI_BOSS = {
@@ -152,6 +157,7 @@ window.GALAXI_BOSS = {
   hp: 160,               // Galaxi's HP
   damage: 2,             // HP you lose per hit (each bullet can override with its own damage)
   playerAttack: 22,      // roughly how hard you hit on a perfect FIGHT
+  healCap: 2,            // HP an attack can give back (Sonic's rings, Mario's ? blocks): Sans never lets you heal mid-attack, this keeps it a bonus
   spareRush: 1.5,        // tried to Spare too early: Galaxi's next attack runs this much faster (the music doesn't)
   spareAt: Infinity,     // SPARE never turns yellow on its own: the only spare is Galaxi giving up (concede)
   concede: { at: 4, say: ["You're no fun!", "Why- WHY are you so NICE all the time?", "Just... Just go! I quit!", "Do you... do you wanna be my friend?", "...", "... No?", "...", "... Okay..."], flavor: "* Galaxi is embarrassed.",
@@ -262,6 +268,58 @@ window.GALAXI_BOSS = {
     if (player.hp <= 6 && !foe.flags.low) { foe.flags.low = true; out.push(...any([["You're looking kinda red.", "...The heart. I mean the heart."], ["You're low!", "Not that I care. I'm the boss."]])); }
     return out;
   },
+
+  // ---- Galaxi being alive: everything below is picked with pick() (no repeats until a pool runs out, never twice in a row, and it
+  // remembers across retries for the whole page visit), so it's hard to hear the same line twice ----
+  pick: list => any(list),
+  // after an attack (story mode): a no-hit attack always gets a reaction, a beating (8+ damage) sometimes does
+  afterAttack: ({ foe, hits, damage, attack }) => {
+    const L = window.GALAXI_BOSS.lines;
+    if (!hits) { const n = foe.flags.perfect = (foe.flags.perfect || 0) + 1; return n >= 3 && Math.random() < .5 ? any(L.streak) : any(L.perfect[attack] || L.streak); }
+    foe.flags.perfect = 0;
+    if (damage >= 8 && Math.random() < .5) return any(L.beaten);
+  },
+  lines: {
+    perfect: { // you took no hits
+      pokeball: [["Not even ONE?", "Pikachu, we're having words later."], ["You dodged a Poke Ball?", "...The real ones don't miss like that."], ["Okay, Pikachu's going back in the PC."],
+        ["Wild player used DODGE.", "It's super effective."], ["That's it, I'm evolving him.", "...Wait, I don't have a Thunder Stone."]],
+      blasters: [["You dodged the Ray of Death?", "It's called that for a REASON."], ["Wow. Not even a scratch.", "I need better lasers."], ["Those blasters took me ages to draw!", "Pixel by pixel!"],
+        ["Okay, you've definitely played Undertale before."], ["I'm renaming it.", "Ray of Mild Inconvenience."]],
+      sonic: [["Okay, you're fast.", "Not Sonic fast. But fast."], ["You didn't even grab the rings?", "...Respect."], ["Two lanes. TWO.", "How hard can it be to get hit?"],
+        ["You've done Green Hill before, huh."], ["Sonic would be proud.", "Don't tell him I said that."]],
+      lorem: [["You actually read all that?", "...Nobody reads my descriptions."], ["Wait, you followed the BLUE ones?", "That was supposed to be a secret."],
+        ["Lorem ipsum, dolor sit... you're good.", "That's Latin for 'you're good'.", "I think."], ["My script editor would be proud of you."]],
+      kablooey: [["Kablooey was supposed to go kablooey ON you."], ["Not even the big one?", "I saved the big one for last!"], ["That was my finale!", "...One of my finales."],
+        ["Okay, who taught you to dodge like that?"]],
+      theworld: [["You moved in stopped time?!", "That's not how The World works!"], ["Even DIO would've hit you by now.", "...Probably."],
+        ["Okay. Next time I'm stopping time for longer.", "Like... nine seconds."], ["Are you a Joestar or something?"]],
+      mario: [["Not a single hit?", "Okay, speedrunner."], ["You beat 1-1 like it was nothing.", "...It IS 1-1, but still."], ["Did you get all the coins too?", "...Don't answer that."],
+        ["Thank you so much for playing my game!", "...Wait, wrong line."]],
+    },
+    streak: [["Okay, that's three no-hit attacks.", "Are you hacking?", "...Are you Sans?"], ["Your keyboard's on fire, isn't it?"], ["I'm calling the CurseForge mods.", "...No, the other kind of mods."],
+      ["Stop being good at my game!", "I made it!"], ["Is this a no-hit run?", "Are you RECORDING this?"]],
+    beaten: [["Ha! Felt that one?"], ["That's gonna leave a mark."], ["Maybe try dodging?", "Just a tip."], ["Don't worry, I'll edit that part out."], ["Want me to slow down?", "...Too bad."],
+      ["That's going in the highlights."], ["Oof.", "That one's going in the thumbnail."], [{ text: "I'd heal you but I don't want to.", sound: V.idhealyoubutidontwantto }],
+      ["Respawn point's that way."], ["You're playing on Hardcore, by the way.", "Did I mention that?"], ["Hey, you're doing great.", "...At getting hit."]],
+  },
+  // one quip mid-attack (at: ms in), picked from the attack's pool
+  quips: {
+    pokeball: { at: 3500, lines: ["Pikachu, focus!", "Pika pika!", "Gotta catch... you.", "Thunderbolt! No wait, Thunder!", "Who's that Pokemon? It's you. Getting hit."] },
+    blasters: { at: 4200, lines: ["Don't blink.", "Charging!", "Ray of DEATH!", "Left! No, right!", "Feel the stars!"] },
+    sonic: { at: 5000, lines: ["Faster!", "Gotta go FASTER!", "Watch the Motobug!", "Rings are for winners.", "Green Hill Zone, baby!"] },
+    kablooey: { at: 4800, lines: ["Wait for it...", "Three... two...", "Big one incoming!", "KA-", "Boom goes the star!"] },
+    theworld: { at: 4500, lines: ["WRYYY!", "ZA WARUDO!", "Muda muda muda!", "Time is MINE!", "You thought it was a normal attack, but it was me, Galaxi!"] },
+    mario: { at: 7000, lines: ["Mamma mia!", "Wahoo!", "Here we go!", "Watch the pipe!", "Let's-a go!"] },
+  },
+  // a random thought before an attack when nothing else is being said (40% of the time)
+  chatter: foe => Math.random() < .4 ? any(window.GALAXI_BOSS.chatterLines) : null,
+  chatterLines: [["Fun fact: this fight took longer to make than my last video."], ["I should be editing right now.", "...This is more fun though."], ["Ever tried Create?", "Of course you have. Everyone has."],
+    ["My modpack crashed four times while I made this.", "Worth it."], ["Do red arrows in thumbnails still work?", "...Asking for a friend."], ["I wonder how many people found this.", "...You're one of like five."],
+    ["Cobblemon or Pixelmon?", "...Don't answer that, people get heated."], ["This would make a great Short.", "Fifteen seconds. Max."], ["If you clip this, tag me."],
+    ["I've been staring at this sprite for three hours.", "I think it's staring back."], ["Sodium or OptiFine?", "...Wrong answer. Whatever you said."], ["Render distance: 32 chunks.", "Frame rate: yes."],
+    ["Is it weird that I'm narrating my own boss fight?", "...Don't answer that either."], ["Back in my day we mined with our hands.", "...It was last week."], ["Shoutout to the people in the Discord.", "You know who you are."],
+    ["Should I add a second phase?", "...Don't give me ideas."], ["My Backrooms mod has better lighting than this fight.", "...Don't tell anyone."], ["Creepers are just misunderstood.", "Like me."],
+    ["Thanks for watching this far.", "...Wait, this isn't a video."], ["Hold on, I think I left a render going.", "...It can wait."]],
 
   acts: [
     { name: "Check", run: foe => nth(foe, "Check", [["* GALAXI - ATK 5 DEF 1", "* Finds the best Minecraft mods. Even makes his own."],
@@ -390,7 +448,7 @@ window.GALAXI_BOSS = {
         let t = 0;
         a.sfx.charge(); a.after(CHARGE, () => a.sfx.beam());
         a.bullet({ x: 320, y: top + y0 + half, w: W, h: y1 - y0, damage: 0, fixed: true,
-          update: (b, dt) => { if ((t += dt) > CHARGE + FIRE + TRAIL + 300) b.dead = true; },
+          update: (b, dt) => { if ((t += dt) > CHARGE + FIRE + TRAIL + 300) b.dead = true; b.tell = t < CHARGE + FIRE; },
           draw: (ctx, b) => {
             const k = TELL(t); if (!k) return;
             ctx.fillStyle = `rgba(255,255,255,${.25 * k})`; ctx.fillRect(-W / 2, -half, W, half * 2); // the warning: a quick flash
@@ -546,6 +604,7 @@ window.GALAXI_BOSS = {
       const lob = (tx, ty, ms, aimed = true) => { a.play(THROW); if (aimed) marker(ms); a.bullet({ ...arc(HAND.x + a.random(-30, 30), HAND.y, tx, ty, ms), w: 22, h: 22, damage: 0, clip: false, spin: .15, draw: look(0),
         update(b, dt) {
           if (b === caught) return holdOn(b, dt);
+          b.tell = b.clip && b.alpha === undefined; // can still catch you (for tools/sim.html's bot)
           const B = a.box, f = dt / 16.7;
           fall(b, dt);
           if (!b.clip && b.y > B.top - R) b.clip = true; // reached the box: masked from here on, so it slides in under the top edge
@@ -642,7 +701,7 @@ window.GALAXI_BOSS = {
       const thunder = () => {
         const x = Math.max(box.left + 10, Math.min(box.right - 10, a.soul.x)); let t = 0; a.sfx.charge();
         a.bullet({ x, y: (box.top + box.bottom) / 2, w: 2, h: box.height, damage: 0,
-          update(w, dt) { if ((t += dt) < 650) return; w.dead = true; strike(x); },
+          update(w, dt) { w.tell = true; w.w = 28; if ((t += dt) < 650) return; w.dead = true; strike(x); }, // tell: the strike's column (the line itself is drawn 2px)
           draw(ctx, w) { const k = TELL(t); if (!k) return; ctx.fillStyle = "#fff"; ctx.globalAlpha = .7 * k; ctx.fillRect(-1, -w.h / 2, 2, w.h); } }); // a quick flash, gone before it strikes
       };
       const strike = x => { let t = 0; a.sfx.beam();
@@ -872,7 +931,7 @@ window.GALAXI_BOSS = {
     kablooey(a) {
       const B = a.box, cx = (B.left + B.right) / 2, cy = (B.top + B.bottom) / 2, RX = B.width / 2 + 50, RY = B.height / 2 + 45, wait = ms => new Promise(go => a.after(ms, go));
       const burst = (x, y) => { let t = 0; a.play(SANS_SFX.flash, .5);
-        a.bullet({ x, y, w: 1, h: 1, damage: 0, clip: false, z: 1, update(b, dt) { t += dt; // swells for 700ms (no hitbox), then pops
+        a.bullet({ x, y, w: 56, h: 56, damage: 0, clip: false, z: 1, tell: true, update(b, dt) { t += dt; // tell: where the burst starts // swells for 700ms (no hitbox), then pops
             if (t < 700) return; b.dead = true; a.play(SANS_SFX.impact, .7);
             for (let i = 0; i < 8; i++) { const ang = i * Math.PI / 4 + Math.PI / 8; a.bullet({ x, y, vx: Math.cos(ang) * 3, vy: Math.sin(ang) * 3, w: 15, h: 15, image: "starBombBit", spin: .15, damage: 3 }); } },
           draw(ctx) { if (Math.floor(t / 70) % 2 && t < 500) return; const im = a.images.starBomb, k = 2 + Math.floor(t / 140); im.naturalWidth ? ctx.drawImage(im, -4.5 * k, -4.5 * k, 9 * k, 9 * k) : starPx(ctx, STAR7, k); } }); }; // Galaxi's star bomb, swelling 2x to 6x

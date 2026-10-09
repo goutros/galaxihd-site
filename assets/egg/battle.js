@@ -255,12 +255,12 @@
     function enemyTurn() {
       if (foe.hp <= 0) return win();
       const t = boss.turns[turn % boss.turns.length]; foe.loop = Math.floor(turn / boss.turns.length); turn++; // loop: how many times he's run out of attacks
-      const fl = v => { v = typeof v === "function" ? v(foe, player) : v; return Array.isArray(v) ? v[Math.floor(Math.random() * v.length)] : v; }; // a list of flavor lines: one at random
+      const fl = v => { v = typeof v === "function" ? v(foe, player) : v; return Array.isArray(v) ? (boss.pick ? boss.pick(v) : v[Math.floor(Math.random() * v.length)]) : v; }; // a list of flavor lines: one at random (boss.pick: no repeats)
       flavor = firstFlavor || fl((boss.reactFlavor || {})[foe.last]) || fl(t.flavor) || flavor; firstFlavor = null;
       if (t.sneak) { firstTurn = false; ready = t; return dodge(t); } // sneak: no speech, no box resize, no heart glide; the attack runs the show (it starts looking like the menu)
       const aside = boss.aside ? boss.aside({ foe, player, turn: turn - 1, deaths, story: storyMode, first: firstTurn }) || [] : []; firstTurn = false; // lines that can come up on any turn (retries, low HP, out of attacks)
       const r = (boss.react || {})[foe.last];
-      const lines = [].concat(aside, storyMode ? (typeof t.before === "function" ? t.before(foe) : t.before) || (typeof r === "function" ? r(foe, player) : r) || t.otherwise || [] : [], typeof t.say === "function" ? t.say(foe) : t.say || []); // before: story lines, skipped on a plain retry
+      const lines = [].concat(aside, storyMode ? (typeof t.before === "function" ? t.before(foe) : t.before) || (typeof r === "function" ? r(foe, player) : r) || t.otherwise || (boss.chatter ? boss.chatter(foe) : null) || [] : [], typeof t.say === "function" ? t.say(foe) : t.say || []); // before: story lines, skipped on a plain retry
       // like Undertale: the box shrinks to the attack's size while Galaxi talks, with the SOUL already inside it,
       // and the attack only starts once the box has finished resizing
       box.tw = t.box ? t.box[0] : 160; box.th = t.box ? t.box[1] : 140;
@@ -284,21 +284,26 @@
       return true;
     }
     let ready = null, bubble = null, fakeMenu = false; // fakeMenu: an attack is pretending it's the player's turn // the turn waiting for the box to finish resizing; a go: line's bubble still showing
+    let round = { hits: 0, dmg: 0, healed: 0 }; // this attack: hits taken, damage, HP healed (capped at boss.healCap)
     function dodge(t) {
       const a = boss.attacks[t.attack];
-      state = "dodge"; bullets = []; timers = []; clock = 0;
+      state = "dodge"; bullets = []; timers = []; clock = 0; round = { t, hits: 0, dmg: 0, healed: 0 };
       box.tw = t.box ? t.box[0] : 160; box.th = t.box ? t.box[1] : 140;
       const fromX = soul.x, fromY = soul.y; // where the heart is now: it glides from here once the attack has placed it
       soul.x = 320; soul.y = 384 - box.th / 2; soul.mario = t.soul === "mario"; soul.blue = soul.mario || t.soul === "blue"; soul.vy = 0; soul.grounded = false; soul.hide = false;
       soul.vx = 0; soul.acc = 0; soul.held = true; soul.buffer = soul.coyote = 0;
       attackEnd = t.time || 6000;
       a(api);
+      const q = boss.quips && boss.quips[t.attack], quips = typeof t.quips === "function" ? t.quips(foe) : t.quips || (q ? [[q.at, boss.pick ? boss.pick(q.lines) : q.lines[0]]] : []);
+      for (const [ms, l] of quips) api.after(ms, () => api.say(l, 1700)); // Galaxi talking mid-attack, Sans-style (boss.quips: one per attack, picked from its pool)
       if (t.sneak) return; // the attack places (and usually hides) the heart itself
       const toX = soul.x, toY = soul.y; soul.x = fromX; soul.y = fromY; glideTo(toX, toY); // the attack's clock waits for this
     }
     function endDodge() {
       const c = boss.concede, quit = c && foe.last === "Compliment" && foe.flags.nice >= c.at; // complimented him enough: he gives up
+      const react = !quit && storyMode && boss.afterAttack ? [].concat(boss.afterAttack({ foe, player, hits: round.hits, damage: round.dmg, attack: round.t && round.t.attack }) || []) : []; // how that attack went
       foe.last = null; bullets = []; timers = []; api.musicRate(1); fakeMenu = false;
+      if (!quit && react.length) { state = "talk"; bubble = null; after = toMenu; return talkLine(react.shift(), react); }
       if (!quit) return toMenu();
       const lines = [...c.say]; state = "talk"; after = () => { foe.spare = Infinity; toMenu(); flavor = c.flavor || flavor; }; talkLine(lines.shift(), lines); // SPARE turns yellow
     }
@@ -337,13 +342,13 @@
       say(text, ms = 1500) { bubble = { text, n: 0, t: 0, quiet: false, life: ms }; }, // Galaxi's speech bubble, typed with his voice blips, up for ms once typed
       damage(n) { // Sans-style: no flashing i-frames, so it can tick every few frames (a quieter hurt sound each time)
         if (foe.last === "Compliment") n = Math.ceil(n / 2);
-        player.hp = Math.max(0, player.hp - n); play(SFX.hurt1, .4); if (player.hp <= 0) gameOver(); },
+        player.hp = Math.max(0, player.hp - n); round.hits++; round.dmg += n; play(SFX.hurt1, .4); if (player.hp <= 0) gameOver(); },
       steering: () => ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].some(k => down.has(k)) || !!drag, // pushing a direction
       musicRate(rate, ms = 0) { if (!music) return; try { const p = music.playbackRate, t = ac.currentTime; // 0 freezes the music, 1 is normal
         p.cancelScheduledValues(t); p.setValueAtTime(p.value, t); if (ms) p.linearRampToValueAtTime(rate, t + ms / 1000); else p.setValueAtTime(rate, t); } catch {} },
       bullets: () => bullets,   // every bullet on screen (e.g. to freeze them all)
       pressed: () => hit.size > 0 || !!tap, // true on the frame any key is pressed or the screen is tapped (e.g. mashing to break free)
-      heal(n, sound = true) { player.hp = Math.min(player.max, player.hp + n); if (sound) sfx.heal(); },
+      heal(n, sound = true) { n = Math.min(n, (boss.healCap ?? Infinity) - round.healed); if (n <= 0) return; round.healed += n; player.hp = Math.min(player.max, player.hp + n); if (sound) sfx.heal(); }, // capped per attack
       tapped: k => hit.has(k),  // true on the frame that key went down ("ArrowUp" etc.; WASD count as arrows)
       heart: (x, y, color) => heart(x, y, color), // draw the SOUL (inside a bullet's draw it follows the bullet's position/rotation)
       sfx,                      // the battle's sound effects, e.g. a.sfx.hit()
@@ -358,7 +363,7 @@
     function hurt(d) { // true if that killed you
       if (soul.inv) return false;
       if (foe.last === "Compliment") d = Math.ceil(d / 2); // complimented: every hit of this attack does half
-      player.hp = Math.max(0, player.hp - d); soul.inv = IFRAMES; sfx.hurt();
+      player.hp = Math.max(0, player.hp - d); round.hits++; round.dmg += d; soul.inv = IFRAMES; sfx.hurt();
       if (player.hp <= 0) { gameOver(); return true; }
       return false;
     }
@@ -397,11 +402,9 @@
         soul.x = Math.max(L, Math.min(R, land ? land.x : soul.x)); soul.y = T; soul.vy = 0; soul.vx = 0; hurt(boss.fallDamage || 4);
       }
     }
-    function touches(b) { // Webtale's rotated-rectangle test against the 16px soul
-      const c = Math.abs(Math.cos(b.rot)), s = Math.abs(Math.sin(b.rot)), dx = Math.abs(soul.x - b.x), dy = Math.abs(soul.y - b.y);
-      if (dx > (c * b.w + s * b.h) / 2 + 4) return false;
-      if (dy > (c * b.h + s * b.w) / 2 + 4) return false;
-      return true; // +4 instead of the full 8px half-soul: Undertale's hitbox is smaller than the heart
+    function touches(b) { // a true rotated-rectangle test against the soul (it used to box a rotated bullet upright: a star spun 45deg hit ~40% wider than it looks)
+      const c = Math.cos(b.rot || 0), s = Math.sin(b.rot || 0), ox = soul.x - b.x, oy = soul.y - b.y;
+      return Math.abs(ox * c + oy * s) <= b.w / 2 + 4 && Math.abs(-ox * s + oy * c) <= b.h / 2 + 4; // +4 instead of the full 8px half-soul: Undertale's hitbox is smaller than the heart
     }
     function pixels(rows, x, y, k, color) { ctx.fillStyle = color; rows.forEach((row, j) => [...row].forEach((c, i) => c === "1" && ctx.fillRect(Math.round(x) + i * k, Math.round(y) + j * k, k, k))); }
     function heart(x, y, color = "#f00", half) { // half: -1 = left half only, 1 = right half only (the cracked SOUL)

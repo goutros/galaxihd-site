@@ -19,18 +19,18 @@ const FRAME = 1000 / 60, DIRS = [[], ["ArrowUp"], ["ArrowDown"], ["ArrowLeft"], 
 const vec = keys => [(keys.includes("ArrowRight") ? 1 : 0) - (keys.includes("ArrowLeft") ? 1 : 0), (keys.includes("ArrowDown") ? 1 : 0) - (keys.includes("ArrowUp") ? 1 : 0)];
 const pick = l => l[Math.floor(Math.random() * l.length)];
 
-// danger of the SOUL being at (x, y) f frames from now: every hurting bullet moved along its velocity, tested with the engine's own hit test
+// danger of the SOUL being at (x, y) f frames from now: every hurting bullet (and every tell) moved along its velocity
 function danger(E, x, y, f) {
-  const s = E.soul, sx = s.x, sy = s.y; let d = 0;
-  s.x = x; s.y = y;
-  for (const b of E.bullets) { if (!b.damage || b.solid || b.dead) continue;
-    const bx = b.x, by = b.y; b.x += b.vx * f; b.y += b.vy * f;
-    if (E.touches(b)) d += 1 / (1 + f * .25);
-    b.x = bx; b.y = by; }
-  s.x = sx; s.y = sy; return d;
+  let d = 0;
+  for (const b of E.bullets) { if ((!b.damage && !b.tell) || b.solid || b.dead) continue; // tell: a warning that's about to hurt (a human reads it, so the bot does too)
+    const px = b.x + b.vx * f, py = b.y + b.vy * f, c = Math.cos(b.rot || 0), sn = Math.sin(b.rot || 0), ox = x - px, oy = y - py;
+    // a real rotated-rectangle test (the engine's touches() boxes a rotated bullet upright, which for a long diagonal lane covers the screen)
+    if (Math.abs(ox * c + oy * sn) <= b.w / 2 + 4 && Math.abs(-ox * sn + oy * c) <= b.h / 2 + 4) d += 1 / (1 + f * .25); }
+  return d;
 }
-// the bot: tries each direction for the next 14 frames (2px a frame), keeps the safest, leaning toward the box middle when it's all safe
+// the bot: tries each direction for the next 30 frames (2px a frame), keeps the safest, leaning toward the box middle when it's all safe
 function botKeys(E, attack) {
+  if (E.soul.hide && attack === "pokeball") return (botKeys.mash = !botKeys.mash) ? ["z"] : []; // caught in a Poke Ball: mash to struggle out
   const s = E.soul, B = E.box, L = 320 - B.w / 2 + 8, R = 320 + B.w / 2 - 8, T = 384 - B.h + 8, Bt = 384 - 8;
   if (attack === "sonic") { // two lanes, Up/Down switch: take the lane with less coming at it
     const lanes = [384 - B.h + B.h / 4, 384 - B.h / 4], here = Math.abs(s.y - lanes[0]) < Math.abs(s.y - lanes[1]) ? 0 : 1;
@@ -39,7 +39,7 @@ function botKeys(E, attack) {
   }
   let best = null, bestScore = Infinity;
   for (const keys of DIRS) { const [vx, vy] = vec(keys); let score = 0;
-    for (let f = 1; f <= 14; f += 2) { const x = Math.max(L, Math.min(R, s.x + vx * 2 * f)), y = Math.max(T, Math.min(Bt, s.y + vy * 2 * f)); score += danger(E, x, y, f); }
+    for (let f = 1; f <= 30; f += 3) { const x = Math.max(L, Math.min(R, s.x + vx * 2 * f)), y = Math.max(T, Math.min(Bt, s.y + vy * 2 * f)); score += danger(E, x, y, f); }
     score += Math.hypot(s.x + vx * 20 - 320, s.y + vy * 20 - (384 - B.h / 2)) * .002 + (keys.length ? .001 : 0); // calm tie-break
     if (score < bestScore) { bestScore = score; best = keys; } }
   return best;
@@ -100,6 +100,7 @@ async function play(opts, choose, log, label) {
     else if (st === "aim") { E.keys(aimWait-- <= 0 && aimWait % 2 ? ["z"] : []); } // a fresh press (Z may still be down from the dialogue)
     else if (st === "dead") E.keys(t % 300 < FRAME ? [opts.onDead ? opts.onDead(died) : "z"] : []);
     else if (st === "ttt" && opts.ttt) opts.ttt(E);
+    else if (st === "dodge" && opts.bot) E.keys(botKeys(E, GALAXI_BOSS.turns[(E.turn - 1) % GALAXI_BOSS.turns.length].attack)); // dodging well: the no-hit reactions
     else E.keys([]);
     E.tick(FRAME); await null;
     if (st === "dodge") holdHp = false;
@@ -121,14 +122,15 @@ async function dialogue() {
   });
   // 1b. 25 random playthroughs of 3 loops: random picks, random aims (reaches the lines that depend on which turn a pick lands before)
   const every = [...picks, ["MERCY", 0]];
-  for (let r = 0; r < 25; r++) await route(`random ${r}`, { story: true }, (E, n) => {
+  for (let r = 0; r < 25; r++) await route(`random ${r}`, { story: true, bot: r % 2 === 0 }, (E, n) => {
     if (n > 3 * T + 2) return "stop";
     if (E.foe.hp < 60) E.foe.hp = E.foe.max; if (r % 5 === 0 && n === 2) E.foe.hp = Math.floor(E.foe.max * .3);
     let p = pick(every); if (p[0] === "ITEM" && !E.player.items.length) p = ["FIGHT"];
     return Object.assign([...p], p[0] === "FIGHT" ? { aim: Math.floor(Math.random() * 80) } : {}, Math.random() < .08 ? { lowHp: true } : {});
   });
   // 1c. four loops (the later out-of-attacks lines), and Compliment x4 then Spare (the concede and the spare ending)
-  await route("4 loops", { story: true }, (E, n) => n > 4 * T + 2 ? "stop" : ["ACT", 0]);
+  await route("4 loops", { story: true, bot: true }, (E, n) => n > 4 * T + 2 ? "stop" : ["ACT", 0]);
+  for (let r = 0; r < 4; r++) await route(`no-hit ${r}`, { story: true, bot: true }, (E, n) => n > 3 * T + 2 ? "stop" : ["ACT", 3]); // Ask for mods: mostly no react lines, so chatter and reactions show
   await route("compliments then spare", { turn: 1 }, (E, n) => E.foe.spare >= 1e9 ? ["MERCY", 0] : ["ACT", 1]);
   // 2. FIGHT aimed three ways (a miss, a decent hit, a near-perfect hit)
   for (const aim of [0, 59, 150]) await route(`FIGHT aim ${aim}`, { turn: 1 }, (E, n) => n > 2 ? "stop" : Object.assign(["FIGHT"], { aim }));
