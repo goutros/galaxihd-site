@@ -300,7 +300,7 @@ window.GALAXI_BOSS = {
         ["Did you get all the coins too?", "...Don't answer that. I know you did. Sweaty."], ["Thank you so much for playing my game!", "...Wait, wrong line.", "Get off my game."]],
     },
     streak: [["Okay, that's three no-hit attacks.", "Are you hacking?", "...Are you Sans?", "Nerd."], ["Your keyboard's on fire, isn't it?", "...From all that practice. Loser."],
-      ["I'm calling the CurseForge mods.", "...No, the other kind of mods.", "The ones that ban cheaters."], ["Stop being good at my game!", "I made it!", "...Get your own game."],
+      ["I'm calling the mods.", "...No, the other kind of mods.", "The ones that ban cheaters.", "Like you...", "Cheater."], ["Stop being good at my game!", "I made it!", "...Get your own game."],
       ["Is this a no-hit run?", "Are you RECORDING this?", "...Tryhard."]],
     beaten: [["Ha! Felt that one?"], ["That's gonna leave a mark."], ["Maybe try dodging?", "Just a tip."], ["Don't worry, I'll edit that part out."], ["Want me to slow down?", "...Too bad."],
       ["That's going in the highlights."], ["Oof.", "That one's going in the thumbnail."], [{ text: "I'd heal you but I don't want to.", sound: V.idhealyoubutidontwantto }],
