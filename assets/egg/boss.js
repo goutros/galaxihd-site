@@ -155,6 +155,9 @@ window.GALAXI_BOSS = {
   narrator: "assets/egg/sfx/txt1.mp3", // the "* ..." box text sound (UNDERTALE's own)
   music: "assets/egg/music/tv-world.mp3", // battle music (loops); credit is in the page footers
   musicVolume: .35,      // 0 to 1, keep it under the voice lines
+  // Galaxi's recordings are mastered loud (about -12 dB average, peaks at 0) next to the sfx (-15 to -25 dB), so they're turned down to sit with them
+  voiceVolume: .35,      // his recorded voice lines ("Go, Pikachu!" etc.), 0 to 1
+  blipVolume: .25,       // his talking blip on every other letter (the narrator's own typing sound is much quieter to begin with)
 
   // the speech-bubble lines use Galaxi's recordings; the "* ..." flavor/box lines are Claude placeholders to rewrite
   opening: { box: "* Galaxi notices you found his easter egg.", say: replay => ["So, you found me huh?", "I'm Galaxi, the REAL Galaxi, and I've gone what you'd call TURBO.", replay ? "Pikachu wanted a rematch." : "Wanna see what I can do?"], // replay: R on the death screen

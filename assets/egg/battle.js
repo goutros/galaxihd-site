@@ -73,7 +73,7 @@
       const buf = clips[v];
       if (!(buf instanceof AudioBuffer)) return blip(typeof v === "number" ? v : 440);
       if (ac.state === "suspended") ac.resume(); // first key/tap unlocks audio
-      try { const s = ac.createBufferSource(), g = ac.createGain(); s.buffer = buf; s.playbackRate.value = .9 + Math.random() * .2; /* ±0.1 pitch per blip */ g.gain.value = .8; s.connect(g).connect(ac.destination); s.start(); } catch {}
+      try { const s = ac.createBufferSource(), g = ac.createGain(); s.buffer = buf; s.playbackRate.value = .9 + Math.random() * .2; /* ±0.1 pitch per blip */ g.gain.value = v === boss.voice ? boss.blipVolume ?? .8 : .8; s.connect(g).connect(ac.destination); s.start(); } catch {}
     };
     const play = (src, vol = 1, rate = 1) => { const buf = clips[src]; if (!(buf instanceof AudioBuffer)) return; try { if (ac.state === "suspended") ac.resume(); const s = ac.createBufferSource(), g = ac.createGain(); s.buffer = buf; s.playbackRate.value = rate; g.gain.value = vol; s.connect(g).connect(ac.destination); s.start(); } catch {} };
     [].concat(boss.voice, boss.narrator, boss.sounds || [], boss.music || []).forEach(loadClip);
@@ -240,7 +240,7 @@
 
     // text in the main box: lines typed out one by one, Z to advance, then cb()
     function say(lines, cb) { queue = [].concat(lines).filter(Boolean); after = cb; state = "text"; nextLine(); }
-    function startLine(l) { const snd = lineSound(l); if (snd) play(snd); return { text: lineText(l), n: 0, t: 0, quiet: !!snd, go: !!(l && l.go), shake: !!(l && l.shake) }; }
+    function startLine(l) { const snd = lineSound(l); if (snd) play(snd, boss.voiceVolume ?? 1); return { text: lineText(l), n: 0, t: 0, quiet: !!snd, go: !!(l && l.go), shake: !!(l && l.shake) }; }
     // a Galaxi speech line; one marked go: true starts the attack as it's said, and its bubble stays up a moment during the attack
     function talkLine(l, rest) { talk = startLine(l); talk.rest = rest; if (talk.go) { bubble = { ...talk, life: 1600 }; talk = null; const cb = after; after = null; cb(); } }
     function nextLine() { if (!queue.length) { const cb = after; after = null; return cb && cb(); }
@@ -309,7 +309,7 @@
       deaths++; soul.dead = 1; state = "dead"; clock = 0; bullets = []; stopMusic();
       setTimeout(sfx.crack, 650);
       setTimeout(() => { sfx.shatter(); shards = Array.from({ length: 6 }, (_, i) => ({ x: soul.x, y: soul.y, vx: (i - 2.5) * 1.3 + Math.random() - .5, vy: -3 - Math.random() * 2 })); }, 1450);
-      if (boss.onDeathSound) setTimeout(() => play(boss.onDeathSound), 4000);
+      if (boss.onDeathSound) setTimeout(() => play(boss.onDeathSound, boss.voiceVolume ?? 1), 4000);
       deadLine = { text: boss.onDeath || "Stay determined!", n: 0, t: 0 };
     }
     function exit() { cleanup(); }
