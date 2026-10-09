@@ -125,8 +125,10 @@ function starBlaster(a, x, y, ang, o = {}) {
       b.rot = 0; if (t - dt < IN) a.sfx.charge();
       if (t >= FIRE && t - dt < FIRE) { a.sfx.beam(); for (let f = 0; f < STREAM; f += 16) a.after(f, star); }
       if (t > FIRE + STREAM) { const s = (t - FIRE - STREAM) / 16.7 * .25; b.x -= dx * s; b.y -= dy * s; if (t > FIRE + STREAM + 1200) b.dead = true; } }, // recoils back out once it's done
-    draw(ctx) { const kick = t >= FIRE && t < FIRE + STREAM ? Math.round(Math.sin(t / 25)) * 2 : 0; // shudders while blasting
-      starPx(ctx, STAR7, t > FIRE - 120 && t < FIRE + STREAM ? k + 1 : k, "#fff", kick, 0); } }); // swells just before it fires
+    draw(ctx) { const kick = t >= FIRE && t < FIRE + STREAM ? Math.round(Math.sin(t / 25)) * 2 : 0, im = a.images.starBlaster; // shudders while blasting
+      const s = Math.max(2, Math.round(k * .6)) + (t > FIRE - 120 && t < FIRE + STREAM ? 1 : 0); // whole-number scale (crisp), +1 as it swells just before firing
+      if (!im.naturalWidth) return starPx(ctx, STAR7, s + 2, "#fff", kick, 0); // (the old drawn star if the sprite hasn't loaded)
+      ctx.rotate(ang - Math.PI / 2); ctx.drawImage(im, kick - 7 * s, -9.5 * s, 14 * s, 13 * s); } }); // Galaxi's star blaster: its jaw (the sprite's bottom) faces the lane and sits where the beam starts
 }
 
 const any = list => list[Math.floor(Math.random() * list.length)]; // one at random
@@ -136,7 +138,9 @@ window.GALAXI_BOSS = {
   name: "Galaxi",
   sprite: "assets/egg/galaxi-idle.png",
   spriteScale: 2,        // whole numbers only, keeps the pixel art crisp
-  images: { star: "assets/star-m.png", bigstar: "assets/star-l.png", mterrain: "assets/egg/mario/terrain.png", msprites: "assets/egg/mario/sprites.png",
+  images: { star: "assets/star-m.png", bigstar: "assets/star-l.png",
+    starBlaster: "assets/egg/stars/blaster.png", starBomb: "assets/egg/stars/bomb.png", starBombBit: "assets/egg/stars/bomb-projectile.png", // Galaxi's sprites, white, 14x13 / 9x9 / 3x3
+    mterrain: "assets/egg/mario/terrain.png", msprites: "assets/egg/mario/sprites.png",
     // all POKEMON YELLOW: Poke Ball and walking Pikachu from the pret/pokeyellow disassembly, front sprite from PokeAPI/sprites
     // (both on GitHub), turned white with the outline, cheeks and the ball's light half cut out; bolt: Galaxi's own electric sprite
     pokeball: "assets/egg/pokemon/pokeball.png", pikachu: "assets/egg/pokemon/pikachu.png", pikachuWalk: "assets/egg/pokemon/pikachu-walk.png", bolt: "assets/egg/pokemon/electric.png",
@@ -869,8 +873,8 @@ window.GALAXI_BOSS = {
       const burst = (x, y) => { let t = 0; a.play(SANS_SFX.flash, .5);
         a.bullet({ x, y, w: 1, h: 1, damage: 0, clip: false, z: 1, update(b, dt) { t += dt; // swells for 700ms (no hitbox), then pops
             if (t < 700) return; b.dead = true; a.play(SANS_SFX.impact, .7);
-            for (let i = 0; i < 8; i++) { const ang = i * Math.PI / 4 + Math.PI / 8; a.bullet({ x, y, vx: Math.cos(ang) * 3, vy: Math.sin(ang) * 3, w: 15, h: 15, image: "star", spin: .15, damage: 3 }); } },
-          draw(ctx) { if (Math.floor(t / 70) % 2 && t < 500) return; starPx(ctx, STAR7, 2 + Math.floor(t / 140)); } }); };
+            for (let i = 0; i < 8; i++) { const ang = i * Math.PI / 4 + Math.PI / 8; a.bullet({ x, y, vx: Math.cos(ang) * 3, vy: Math.sin(ang) * 3, w: 15, h: 15, image: "starBombBit", spin: .15, damage: 3 }); } },
+          draw(ctx) { if (Math.floor(t / 70) % 2 && t < 500) return; const im = a.images.starBomb, k = 2 + Math.floor(t / 140); im.naturalWidth ? ctx.drawImage(im, -4.5 * k, -4.5 * k, 9 * k, 9 * k) : starPx(ctx, STAR7, k); } }); }; // Galaxi's star bomb, swelling 2x to 6x
       (async () => {
         await wait(300);
         const th0 = a.random(0, Math.PI * 2), turn = Math.random() < .5 ? 1 : -1;

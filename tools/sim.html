@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Boss fight sim</title>
+<style>
+  body { margin: 0; padding: 16px; background: #0c1838; color: #eaf6ff; font: 14px/1.4 system-ui, sans-serif; }
+  table { border-collapse: collapse; margin: 12px 0; } td, th { padding: 4px 10px; border-bottom: 1px solid #2a4170; text-align: left; }
+  .sheet { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0 18px; } .sheet img { width: 160px; image-rendering: pixelated; border: 1px solid #2a4170; }
+  #ut-battle { transform: translateX(-300vw); } /* the sim steps the fight off screen (full size, so taps land on the board); frames are shown below */
+</style></head><body>
+<h1>Boss fight sim</h1>
+<p>Local only (not linked from the site). Steps every turn of the fight frame by frame with three players: a <b>bot</b> that predicts every bullet a
+  few frames ahead and steps out of the way (a decent human), <b>still</b> (never moves) and <b>random</b> (mashes directions). Fewer bot hits =
+  more readable; the gap to still/random is how much dodging matters. Run: open <code>localhost:8765/tools/sim.html</code>, or call
+  <code>sim.run()</code> / <code>sim.run([2, 4])</code> from the console. <code>sim.dialogue()</code> plays every route (each menu pick for 2 loops, FIGHT hit/miss, win, flee, 12 deaths + replay, the phone game's three endings) and lists any line in boss.js that never reached the screen. Results are also on <code>window.simResult</code>.</p>
+<div id="out"></div>
+<script src="../assets/egg/boss.js"></script>
+<script src="../assets/egg/battle.js"></script>
+<script>
+const FRAME = 1000 / 60, DIRS = [[], ["ArrowUp"], ["ArrowDown"], ["ArrowLeft"], ["ArrowRight"], ["ArrowUp", "ArrowLeft"], ["ArrowUp", "ArrowRight"], ["ArrowDown", "ArrowLeft"], ["ArrowDown", "ArrowRight"]];
+const vec = keys => [(keys.includes("ArrowRight") ? 1 : 0) - (keys.includes("ArrowLeft") ? 1 : 0), (keys.includes("ArrowDown") ? 1 : 0) - (keys.includes("ArrowUp") ? 1 : 0)];
+const pick = l => l[Math.floor(Math.random() * l.length)];
+
+// danger of the SOUL being at (x, y) f frames from now: every hurting bullet moved along its velocity, tested with the engine's own hit test
+function danger(E, x, y, f) {
+  const s = E.soul, sx = s.x, sy = s.y; let d = 0;
+  s.x = x; s.y = y;
+  for (const b of E.bullets) { if (!b.damage || b.solid || b.dead) continue;
+    const bx = b.x, by = b.y; b.x += b.vx * f; b.y += b.vy * f;
+    if (E.touches(b)) d += 1 / (1 + f * .25);
+    b.x = bx; b.y = by; }
+  s.x = sx; s.y = sy; return d;
+}
+// the bot: tries each direction for the next 14 frames (2px a frame), keeps the safest, leaning toward the box middle when it's all safe
+function botKeys(E, attack) {
+  const s = E.soul, B = E.box, L = 320 - B.w / 2 + 8, R = 320 + B.w / 2 - 8, T = 384 - B.h + 8, Bt = 384 - 8;
+  if (attack === "sonic") { // two lanes, Up/Down switch: take the lane with less coming at it
+    const lanes = [384 - B.h + B.h / 4, 384 - B.h / 4], here = Math.abs(s.y - lanes[0]) < Math.abs(s.y - lanes[1]) ? 0 : 1;
+    const lane = i => [0, 4, 8, 12, 16, 22].reduce((n, f) => n + danger(E, s.x, s.y + (lanes[i] - lanes[here]), f), 0);
+    return lane(1 - here) + .2 < lane(here) ? [here ? "ArrowUp" : "ArrowDown"] : [];
+  }
+  let best = null, bestScore = Infinity;
+  for (const keys of DIRS) { const [vx, vy] = vec(keys); let score = 0;
+    for (let f = 1; f <= 14; f += 2) { const x = Math.max(L, Math.min(R, s.x + vx * 2 * f)), y = Math.max(T, Math.min(Bt, s.y + vy * 2 * f)); score += danger(E, x, y, f); }
+    score += Math.hypot(s.x + vx * 20 - 320, s.y + vy * 20 - (384 - B.h / 2)) * .002 + (keys.length ? .001 : 0); // calm tie-break
+    if (score < bestScore) { bestScore = score; best = keys; } }
+  return best;
+}
+
+// one turn with one player; returns hits, damage, length and a few frames
+async function runTurn(i, player, frames) { // async: some attacks are scripted with await, so every frame yields for them
+  document.getElementById("ut-battle")?.querySelector("button")?.click(); window.__egg = undefined;
+  startBattle(GALAXI_BOSS, "../", { turn: i, sim: true });
+  const E = window.__egg, attack = GALAXI_BOSS.turns[i].attack, shots = [];
+  let hits = 0, damage = 0, lastHp = E.player.hp, t = 0, inDodge = 0, randomKeys = [], peak = 0;
+  for (; t < 60000; t += FRAME) {
+    const st = E.state;
+    if (st === "talk" || st === "text") { E.keys(t % 200 < FRAME ? ["z"] : []); }
+    else if (st === "dodge") {
+      inDodge += FRAME; peak = Math.max(peak, E.bullets.filter(b => b.damage && !b.solid).length);
+      if (player === "bot") E.keys(botKeys(E, attack));
+      else if (player === "random") { if (t % 250 < FRAME) randomKeys = pick(DIRS); E.keys(randomKeys); }
+      else E.keys([]);
+      if (frames && inDodge % 1000 < FRAME) { const c = document.createElement("canvas"); c.width = 320; c.height = 240; c.getContext("2d").drawImage(E.canvas, 0, 0, 320, 240); shots.push(c.toDataURL("image/jpeg", .7)); }
+    } else if (st === "menu" || st === "end" || st === "dead") break;
+    else E.keys([]);
+    E.tick(FRAME); await null; // let the attack's awaits (wait(ms) promises) run, like they would between real frames
+    if (E.player.hp < lastHp) { damage += lastHp - E.player.hp; hits++; }
+    E.player.hp = E.player.max; lastHp = E.player.hp; // never dies: we're measuring, not playing
+  }
+  document.getElementById("ut-battle")?.querySelector("button")?.click();
+  return { hits, damage, seconds: +(inDodge / 1000).toFixed(1), peak, shots };
+}
+
+// ---------- dialogue coverage: play the fight down every route and log every line that reaches the screen ----------
+// Every string in boss.js's dialogue (opening .. attacks, plus the endings) is the catalogue; anything never seen is reported.
+async function catalogue() {
+  const src = await (await fetch("../assets/egg/boss.js", { cache: "no-store" })).text();
+  const parts = [src.slice(src.indexOf("  opening:"), src.indexOf("  attacks: {")), src.slice(src.indexOf("  onWin:"))]; // (lorem's own FAKE line is drawn by the attack, not the dialogue system)
+  const out = new Set();
+  for (const part of parts) for (const m of part.matchAll(/(name:\s*)?"((?:[^"\\]|\\.)*)"(\s*:)?/g)) {
+    const s = m[2].replace(/\\(.)/g, "$1");
+    const before = part.slice(Math.max(0, m.index - 12), m.index);
+    if (m[1] || m[3] || /attack: $|nth\(foe, $|=== $/.test(before) || s.length < 2 || /^assets\/|\.mp3$|\.png$|^#|^[A-Z][a-z]+$|^(drank|blue|mario|story|phone)$/.test(s)) continue; // keys, names, paths
+    out.add(s);
+  }
+  return out;
+}
+const clean = s => s && s.replace(/^\* /, "").trim();
+
+// one playthrough. choose(E, n) returns the menu pick for the n-th menu as [button, option] (or a function that acts itself)
+async function play(opts, choose, log, label) {
+  document.getElementById("ut-battle")?.querySelector("button")?.click(); window.__egg = undefined;
+  startBattle(GALAXI_BOSS, "../", { sim: true, story: true, ...opts });
+  const E = window.__egg; let menus = 0, aimWait = 0, holdHp = false, t = 0, prev = "", died = 0;
+  const see = s => { s = s && (typeof s === "string" ? s : s.text); if (s) log.add(s); };
+  for (; t < (opts.limit || 400000) && document.getElementById("ut-battle"); t += FRAME) {
+    const st = E.state; if (st === "dead" && prev !== "dead") died++; prev = st;
+    see(E.talk); see(E.typing); see(E.bubble); see(E.deadLine); if (st === "menu") see(E.flavor);
+    if (st === "talk" || st === "text" || st === "end") E.keys(t % 100 < FRAME ? ["z"] : []);
+    else if (st === "menu") { const c = choose(E, menus++, label); if (c === "stop") break; if (typeof c === "function") c(E); else E.pick(c[0], c[1] || 0); if (c && c.lowHp) { E.player.hp = 5; holdHp = true; } if (c[0] === "FIGHT") aimWait = c.aim ?? Math.floor(Math.random() * 90); }
+    else if (st === "aim") { E.keys(aimWait-- <= 0 && aimWait % 2 ? ["z"] : []); } // a fresh press (Z may still be down from the dialogue)
+    else if (st === "dead") E.keys(t % 300 < FRAME ? [opts.onDead ? opts.onDead(died) : "z"] : []);
+    else if (st === "ttt" && opts.ttt) opts.ttt(E);
+    else E.keys([]);
+    E.tick(FRAME); await null;
+    if (st === "dodge") holdHp = false;
+    if (!opts.mortal && !holdHp) E.player.hp = E.player.max;
+  }
+  document.getElementById("ut-battle")?.querySelector("button")?.click();
+}
+
+async function dialogue() {
+  const all = await catalogue(), log = new Set(), routes = [];
+  const T = GALAXI_BOSS.turns.length, P = GALAXI_BOSS.phone, route = async (label, opts, choose) => { const before = log.size; await play(opts, choose, log, label); routes.push(`${label}: +${log.size - before} new lines`); };
+  // 1. the opening, then each menu pick made every time for 2+ loops (repeat lines, loop lines, low HP once, Galaxi at 35% once)
+  const picks = [["FIGHT"], ["ACT", 0], ["ACT", 1], ["ACT", 2], ["ACT", 3], ["ACT", 4], ["ITEM", 0], ["MERCY", 0]];
+  for (const p of picks) await route(`always ${p.join(" ")}`, { story: true }, (E, n) => {
+    if (n > 2 * T + 2) return "stop";
+    if (p[0] === "ITEM" && !E.player.items.length) return ["ACT", 0];
+    if (n === 4 && p[0] === "FIGHT") E.foe.hp = Math.floor(E.foe.max * .3); else if (E.foe.hp < 40) E.foe.hp = E.foe.max; // "Okay, OW." once, never a win
+    return Object.assign([...p], n === 3 ? { lowHp: true } : {}, p[0] === "FIGHT" ? { aim: [0, 45, 60, 20][n % 4] } : {});
+  });
+  // 1b. 25 random playthroughs of 3 loops: random picks, random aims (reaches the lines that depend on which turn a pick lands before)
+  const every = [...picks, ["MERCY", 0]];
+  for (let r = 0; r < 25; r++) await route(`random ${r}`, { story: true }, (E, n) => {
+    if (n > 3 * T + 2) return "stop";
+    if (E.foe.hp < 60) E.foe.hp = E.foe.max; if (r % 5 === 0 && n === 2) E.foe.hp = Math.floor(E.foe.max * .3);
+    let p = pick(every); if (p[0] === "ITEM" && !E.player.items.length) p = ["FIGHT"];
+    return Object.assign([...p], p[0] === "FIGHT" ? { aim: Math.floor(Math.random() * 80) } : {}, Math.random() < .08 ? { lowHp: true } : {});
+  });
+  // 1c. four loops (the later out-of-attacks lines), and Compliment x4 then Spare (the concede and the spare ending)
+  await route("4 loops", { story: true }, (E, n) => n > 4 * T + 2 ? "stop" : ["ACT", 0]);
+  await route("compliments then spare", { turn: 1 }, (E, n) => E.foe.spare >= 1e9 ? ["MERCY", 0] : ["ACT", 1]);
+  // 2. FIGHT aimed three ways (a miss, a decent hit, a near-perfect hit)
+  for (const aim of [0, 59, 150]) await route(`FIGHT aim ${aim}`, { turn: 1 }, (E, n) => n > 2 ? "stop" : Object.assign(["FIGHT"], { aim }));
+  // 3. win by FIGHT, plain and after a Compliment (betrayed)
+  await route("win", { turn: 0 }, (E, n) => { E.foe.hp = 1; return Object.assign(["FIGHT"], { aim: 59 }); });
+  await route("win after compliment", { turn: 0 }, (E, n) => { if (n === 0) return ["ACT", 1]; E.foe.hp = 1; return Object.assign(["FIGHT"], { aim: 59 }); });
+  // 4. flee
+  await route("flee", { turn: 0 }, () => ["MERCY", 1]);
+  // 5. die 12 times in a row (retry lines by death count), then R for the opening replay
+  let deaths = 0;
+  await route("deaths", { turn: 1, mortal: true, limit: 900000, onDead: d => (deaths = d) > 12 ? "r" : "z" }, (E, n) => deaths > 12 ? "stop" : ["ACT", 0]);
+  // 6. phone: escalate to the 5x5 and win, lose, and rage quit after 7 draws
+  const win = E => { const t = E.ttt; if (t.turn !== 1) return; const l = t.wins[0]; t.b.fill(0); l.slice(0, -1).forEach(i => t.b[i] = 1); E.keys([]); tapCell(E, l.at(-1)); };
+  const draw = E => { const t = E.ttt; if (t.turn !== 1 || t.cols !== 3) return; [1, 2, 1, 1, 2, 2, 2, 1, 0].forEach((v, i) => t.b[i] = v); tapCell(E, 8); };
+  const lose = E => { const t = E.ttt; if (t.turn !== 1) return; const l = t.wins.find(l => l.every(i => !t.b[i] || t.b[i] === 2)); if (l) { t.b.fill(0); l.slice(0, -1).forEach(i => t.b[i] = 2); } const free = t.b.findIndex((v, i) => !v && !(l && l.includes(i))); tapCell(E, free); };
+  await route("phone: win", { phone: true, ttt: win }, () => "stop");
+  await route("phone: lose", { phone: true, ttt: lose }, () => "stop");
+  await route("phone: rage", { phone: true, ttt: draw }, () => "stop");
+  for (let i = 0; i < 6; i++) await route(`phone: mixed ${i}`, { phone: true, ttt: E => { if (E.ttt.turn === 1) { const free = E.ttt.b.map((v, j) => v ? -1 : j).filter(j => j >= 0); tapCell(E, pick(free)); } } }, () => "stop");
+  const seen = [...log].map(clean), unseen = [...all].filter(s => !seen.some(v => v === clean(s)));
+  return { catalogue: all.size, seen: [...all].length - unseen.length, unseen, routes };
+}
+let zDown = false; // a square is picked with the keyboard (cursor + Z): a hidden pane has no size, so a tap can't land on the board
+function tapCell(E, i) { E.ttt.cur = i; zDown = !zDown; E.keys(zDown ? ["z"] : []); }
+
+window.sim = { runTurn, dialogue, async run(only) {
+  const out = document.getElementById("out"), rows = [], turns = only || GALAXI_BOSS.turns.map((_, i) => i);
+  out.innerHTML = "<p>running...</p>";
+  for (const i of turns) {
+    const t = GALAXI_BOSS.turns[i], bot = await runTurn(i, "bot", true), still = await runTurn(i, "still"), random = await runTurn(i, "random");
+    rows.push({ turn: i, attack: t.attack, seconds: bot.seconds, peakBullets: bot.peak, bot: `${bot.hits} (${bot.damage} HP)`, still: `${still.hits} (${still.damage} HP)`, random: `${random.hits} (${random.damage} HP)`, shots: bot.shots });
+    await new Promise(r => setTimeout(r, 0));
+  }
+  out.innerHTML = `<table><tr><th>turn</th><th>attack</th><th>seconds</th><th>peak bullets</th><th>bot hits</th><th>still hits</th><th>random hits</th></tr>${rows.map(r => `<tr><td>${r.turn}</td><td>${r.attack}</td><td>${r.seconds}</td><td>${r.peakBullets}</td><td>${r.bot}</td><td>${r.still}</td><td>${r.random}</td></tr>`).join("")}</table>`
+    + rows.map(r => `<h3>${r.turn}: ${r.attack} (a frame a second, bot playing)</h3><div class="sheet">${r.shots.map(s => `<img src="${s}">`).join("")}</div>`).join("");
+  return window.simResult = rows.map(({ shots, ...r }) => r);
+} };
+</script>
+</body></html>

@@ -54,7 +54,8 @@
 
     // ---------- sound: a short square-wave blip per letter, pitch from boss.voice ----------
     let ac = null;
-    const blip = (freq = 440, len = .045, vol = .06, type = "square") => {
+    const sim = !!(test && test.sim); // tools/sim.html: silent, no animation loop, the sim steps the fight itself (__egg.tick)
+    const blip = (freq = 440, len = .045, vol = .06, type = "square") => { if (sim) return;
       try {
         ac = ac || new (window.AudioContext || window.webkitAudioContext)(); if (ac.state === "suspended") ac.resume();
         const o = ac.createOscillator(), g = ac.createGain(), t = ac.currentTime;
@@ -68,14 +69,14 @@
     const clips = {};
     const loadClip = src => { if (typeof src !== "string" || clips[src]) return; clips[src] = "loading";
       fetch(base + src).then(r => r.arrayBuffer()).then(b => { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); return ac.decodeAudioData(b); }).then(buf => clips[src] = buf).catch(() => delete clips[src]); };
-    const speak = v => {
+    const speak = v => { if (sim) return;
       if (Array.isArray(v)) { const ok = v.filter(x => clips[x] instanceof AudioBuffer); if (!ok.length) return blip(440); v = ok[Math.floor(Math.random() * ok.length)]; }
       const buf = clips[v];
       if (!(buf instanceof AudioBuffer)) return blip(typeof v === "number" ? v : 440);
       if (ac.state === "suspended") ac.resume(); // first key/tap unlocks audio
       try { const s = ac.createBufferSource(), g = ac.createGain(); s.buffer = buf; s.playbackRate.value = .9 + Math.random() * .2; /* ±0.1 pitch per blip */ g.gain.value = v === boss.voice ? boss.blipVolume ?? .8 : .8; s.connect(g).connect(ac.destination); s.start(); } catch {}
     };
-    const play = (src, vol = 1, rate = 1) => { const buf = clips[src]; if (!(buf instanceof AudioBuffer)) return; try { if (ac.state === "suspended") ac.resume(); const s = ac.createBufferSource(), g = ac.createGain(); s.buffer = buf; s.playbackRate.value = rate; g.gain.value = vol; s.connect(g).connect(ac.destination); s.start(); } catch {} };
+    const play = (src, vol = 1, rate = 1) => { if (sim) return; const buf = clips[src]; if (!(buf instanceof AudioBuffer)) return; try { if (ac.state === "suspended") ac.resume(); const s = ac.createBufferSource(), g = ac.createGain(); s.buffer = buf; s.playbackRate.value = rate; g.gain.value = vol; s.connect(g).connect(ac.destination); s.start(); } catch {} };
     [].concat(boss.voice, boss.narrator, boss.sounds || [], boss.music || []).forEach(loadClip);
     // battle music: loops gaplessly through Web Audio, starts after the opening (from the top on every retry), M mutes it
     let music = null, musicGain = null, musicMuted = false, musicGen = 0;
@@ -196,7 +197,7 @@
     }
     function tttOver(w) { // w: 1 you won the round, 2 Galaxi did, 0 a draw (doesn't score; enough in a row and he rage quits)
       const P = boss.phone;
-      if (!w) { ttt.draws++; return ttt.draws >= P.draws.length ? talkThen(P.rageQuit, () => tttEnd("rage")) : talkThen(P.draws[ttt.draws - 1], tttRound); }
+      if (!w) { ttt.draws++; return ttt.draws > P.draws.length ? talkThen(P.rageQuit, () => tttEnd("rage")) : talkThen(P.draws[ttt.draws - 1], tttRound); }
       ttt.draws = 0; if (w === 1) ttt.you++; else ttt.him++;
       if (ttt.him >= ttt.target) return talkThen(P.youLose, () => tttEnd("lose"));
       if (ttt.you >= ttt.target) { const next = P.stages[ttt.stage + 1]; // about to lose: he moves the goalposts while he still can
@@ -639,9 +640,12 @@
       document.documentElement.style.overflow = oldOverflow; wrap.remove(); stopMusic(); try { ac && ac.close(); } catch {}
     }
     close.onclick = cleanup;
-    reset(!seenOpening); raf = requestAnimationFrame(frame);
+    reset(test && "story" in test ? test.story : !seenOpening); if (!sim) raf = requestAnimationFrame(frame); // test.story: force story mode on/off
     if (test && test.turn != null) { startMusic(); turn = test.turn; Object.assign(foe.flags, test.flags); toMenu(); enemyTurn(); } // test.flags: e.g. { mario: 1600 } starts 1-1 at that scroll
-    if (test) window.__egg = { get soul() { return soul; }, api, get player() { return player; }, get foe() { return foe; }, get bullets() { return bullets; }, get state() { return state; }, get clock() { return clock; }, get box() { return box; }, get ttt() { return ttt; }, pick(b, i = 0) { openSub(b); if (state === "sub") sub.pick(sub.options[i], i); } }; // pick("ACT", 1): choose that menu option directly. test mode only: poke at the live battle
+    if (test) window.__egg = { get soul() { return soul; }, api, get player() { return player; }, get foe() { return foe; }, get bullets() { return bullets; }, get state() { return state; }, get clock() { return clock; }, get box() { return box; }, get ttt() { return ttt; }, get attackEnd() { return attackEnd; }, get talk() { return talk; }, get typing() { return typing; }, get flavor() { return flavor; }, get bubble() { return bubble; }, get deadLine() { return deadLine; }, get sub() { return sub; }, get turn() { return turn; }, canvas: cv, touches: b => touches(b),
+      tick(ms = 1000 / 60) { clock += ms; update(ms); draw(); hit.clear(); tap = null; }, // sim: one frame
+      keys(list) { for (const k of list) if (!down.has(k)) hit.add(k); down.clear(); for (const k of list) down.add(k); }, // sim: hold exactly these keys
+      pick(b, i = 0) { openSub(b); if (state === "sub") sub.pick(sub.options[i], i); } }; // pick("ACT", 1): choose that menu option directly. test mode only: poke at the live battle
   };
 })();
 

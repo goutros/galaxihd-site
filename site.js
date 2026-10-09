@@ -565,9 +565,17 @@ document.querySelectorAll("[data-live]").forEach(el => {
   const MC = base + "assets/egg/mc/", STAGES = 10, HOLD = 120; // ms per stage while holding
   const img = src => Object.assign(new Image(), { src });
   let cracks = null; // loaded on the first hit
-  // Minecraft's sounds: hitting = the block's step sound at 1/4 volume, half pitch, every 4 ticks; breaking = its dig sound at pitch .8
-  const sound = (name, n, volume, rate) => { try { const a = new Audio(MC + name + (1 + Math.floor(Math.random() * n)) + ".mp3");
-    a.volume = volume; a.preservesPitch = false; a.playbackRate = rate; a.play().catch(() => {}); } catch {} };
+  // Minecraft's sounds: hitting = the block's step sound at 1/4 volume, half pitch, every 4 ticks; breaking = its dig sound at pitch .8.
+  // Played through Web Audio from buffers decoded ahead of time: a new Audio() per hit had to fetch + decode first (late, or silent
+  // on a slow connection), iOS ignores an <audio>'s volume, and iOS refuses to start one outside a tap (held mining runs from rAF)
+  const AC = window.AudioContext || window.webkitAudioContext, ac = AC && new AC(), buffers = {};
+  const preload = () => { if (!ac) return;
+    for (const [name, n] of [["step_stone", 6], ["dig_stone", 4]]) for (let i = 1; i <= n; i++) { const url = MC + name + i + ".mp3"; if (buffers[url]) continue;
+      buffers[url] = fetch(url).then(r => r.arrayBuffer()).then(b => new Promise((ok, no) => ac.decodeAudioData(b, ok, no))).then(buf => buffers[url] = buf).catch(() => delete buffers[url]); } };
+  (window.requestIdleCallback || (f => setTimeout(f, 1500)))(preload); // 10 small files, ready before anyone starts mining
+  const unlock = () => { if (!ac || ac.state === "running") return; ac.resume(); try { const s = ac.createBufferSource(); s.buffer = ac.createBuffer(1, 1, 22050); s.connect(ac.destination); s.start(); } catch {} }; // iOS: audio starts inside a tap
+  const sound = (name, n, volume, rate) => { const buf = buffers[MC + name + (1 + Math.floor(Math.random() * n)) + ".mp3"]; if (!(buf instanceof AudioBuffer)) return;
+    try { const s = ac.createBufferSource(), g = ac.createGain(); s.buffer = buf; s.playbackRate.value = rate; g.gain.value = volume; s.connect(g).connect(ac.destination); s.start(); } catch {} };
 
   document.querySelectorAll(".avatar").forEach(av => {
     const original = av.src, S = 256; // cracked copies are drawn at 256px (crisp at 84px on 3x screens)
@@ -612,7 +620,7 @@ document.querySelectorAll("[data-live]").forEach(el => {
       requestAnimationFrame(tick);
     };
     av.addEventListener("pointerdown", e => {
-      if (busy || e.button > 0) return; e.preventDefault();
+      if (busy || e.button > 0) return; e.preventDefault(); unlock(); preload();
       if (!cracks) cracks = Array.from({ length: STAGES }, (_, i) => img(`${MC}destroy_stage_${i}.png`));
       clearTimeout(idle); try { av.setPointerCapture(e.pointerId); } catch {}
       lastSound = 0; setProgress(Math.floor(progress) + 1); hit(3); // a click is worth one whole stage
