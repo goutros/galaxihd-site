@@ -101,11 +101,13 @@ const WORLD_1_1 = [
 const STAR7 = ["0001000", "0001000", "0011100", "1111111", "0011100", "0001000", "0001000"], STAR3 = ["010", "111", "010"];
 const starPx = (ctx, rows, k, color = "#fff", ox = 0, oy = 0) => { const n = rows.length; ctx.fillStyle = color;
   rows.forEach((r, j) => [...r].forEach((c, i) => c === "1" && ctx.fillRect(ox + (i - n / 2) * k, oy + (j - n / 2) * k, k, k))); };
+// FFXIV-style telegraph: a warning flashes in (60ms) and fades out (300ms), long before the hit lands, so you have to remember where it was
+const TELL = t => t < 0 ? 0 : t < 60 ? t / 60 : Math.max(0, 1 - (t - 60) / 300);
 const SANS_SFX = Object.fromEntries([["impact", "impact"], ["flash", "eyeflash"]].map(([k, f]) => [k, `assets/egg/sfx/${f}.mp3`])); // UNDERTALE's
 // a star blaster (Sans's Gaster Blaster, one of Galaxi's stars), fired like the Mario turn's star avalanche: it flies in spinning to (x, y)
-// and its lane along ang lights up as the warning (charge sound), then it swells and blasts a packed stream of spinning stars down the lane
-// (beam sound). Same fair rule as Mario: a stream star only hurts while the heart's middle is inside the lane. The lane stays lit until
-// the last stars are through, then fades, and the blaster drifts back out. o: k (star scale), width (lane px), charge (ms), damage
+// and its lane along ang flashes up as the warning and fades (TELL), then it swells and blasts a packed stream of spinning stars down the lane
+// (beam sound). Same fair rule as Mario: a stream star only hurts while the heart's middle is inside the lane. The blaster drifts
+// back out once it's done. o: k (star scale), width (lane px), charge (ms), damage
 function starBlaster(a, x, y, ang, o = {}) {
   const { pace = 1, k = 5, width = 26, charge = 550 / pace, damage = 3 } = o, dx = Math.cos(ang), dy = Math.sin(ang), IN = 300 / pace, FIRE = IN + charge, STREAM = 400, TRAIL = 900 / pace; // pace: .8 = everything 20% slower
   const inLane = () => Math.abs((a.soul.x - x) * -dy + (a.soul.y - y) * dx) <= width / 2 && (a.soul.x - x) * dx + (a.soul.y - y) * dy > 0;
@@ -116,9 +118,8 @@ function starBlaster(a, x, y, ang, o = {}) {
   let t = 0;
   a.bullet({ x: x + dx * 300, y: y + dy * 300, w: 1200, h: width, rot: ang, damage: 0, z: -1, // the lane (centred 300px out so the off-screen cull never eats it)
     update(b, dt) { if ((t += dt) > FIRE + STREAM + TRAIL + 300) b.dead = true; },
-    draw(ctx) { if (t < IN) return; const c = t - IN, end = FIRE + STREAM + TRAIL;
-      const v = t < FIRE ? Math.sin(c / charge * Math.PI / 2) : t < end ? 1 : Math.max(0, 1 - (t - end) / 300);
-      ctx.fillStyle = `rgba(255,255,255,${.18 * v * (.85 + .15 * Math.sin(t / 70))})`; ctx.fillRect(-300, -width / 2, 1200, width); } });
+    draw(ctx) { const v = TELL(t - IN); if (!v) return; // the lane flashes as the blaster arrives, then it's gone
+      ctx.fillStyle = `rgba(255,255,255,${.25 * v})`; ctx.fillRect(-300, -width / 2, 1200, width); } });
   a.bullet({ x: x - dx * 90, y: y - dy * 90, w: 1, h: 1, damage: 0, clip: false, z: 2, line: { x, y, ang, width }, // line: where it fires (handy for test bots)
     update(b, dt) {
       if (t < IN) { const e = 1 - (1 - t / IN) ** 3; b.x = x - dx * 90 * (1 - e); b.y = y - dy * 90 * (1 - e); b.rot = (1 - e) * Math.PI * 2 * (dx < 0 ? -1 : 1); return; } // eases in, spinning
@@ -361,13 +362,13 @@ window.GALAXI_BOSS = {
 
       // NOT in the original: 4 times per attack an avalanche of Galaxi's stars floods one half of the sky, coming from the star wall
       // on the left. The halves split at the top of 1-1's first brick/? row: bottom = the ground up to there, top = there up to the
-      // box top, and the stars are spread evenly over the whole height of their half. The half lights up first as the warning
+      // box top, and the stars are spread evenly over the whole height of their half. The half flashes up first as a quick warning that fades (TELL)
       // (Gaster Blaster charge sound). Stars fly through pipes, stairs and blocks.
       // The 1st always hits the bottom half, the other 3 are random. Fair by design: the bottom half is only hit when there's
       // something to stand on (the brick/? row, a block above it, a tall pipe or the stairs, on screen or up to 6 tiles past the
       // edge); otherwise it hits the top half, which you dodge by staying low.
-      // TRAIL: how long the last stars need to clear the box (slowest 6 px/frame over ~360px): the warning stays lit until then,
-      // otherwise players drop back into stars still flying through
+      // TRAIL: how long the last stars need to clear the box (slowest 6 px/frame over ~360px). The warning is long gone by then
+      // (Galaxi wanted FFXIV-style tells): watch the stars themselves before dropping back down
       const GROUND = 9 * T, MID = 5 * T, CHARGE = 1400, FIRE = 1100, TRAIL = 1000;
       const ledge = () => {
         const c0 = Math.floor(lv.off / T), c1 = Math.floor((lv.off + W) / T);
@@ -391,8 +392,8 @@ window.GALAXI_BOSS = {
         a.bullet({ x: 320, y: top + y0 + half, w: W, h: y1 - y0, damage: 0, fixed: true,
           update: (b, dt) => { if ((t += dt) > CHARGE + FIRE + TRAIL + 300) b.dead = true; },
           draw: (ctx, b) => {
-            const k = t < CHARGE ? Math.sin(t / CHARGE * Math.PI / 2) : t < CHARGE + FIRE + TRAIL ? 1 : Math.max(0, 1 - (t - CHARGE - FIRE - TRAIL) / 300);
-            ctx.fillStyle = `rgba(255,255,255,${.18 * k * (.85 + .15 * Math.sin(t / 70))})`; ctx.fillRect(-W / 2, -half, W, half * 2); // the warning
+            const k = TELL(t); if (!k) return;
+            ctx.fillStyle = `rgba(255,255,255,${.25 * k})`; ctx.fillRect(-W / 2, -half, W, half * 2); // the warning: a quick flash
           } });
         // the avalanche: 7 stars every frame for the whole blast (~500), one in each seventh of the half so the whole height is packed
         for (let i = 0; i < FIRE / 16; i++) a.after(CHARGE + i * 16, () => { for (let j = 0; j < 7; j++) star(y0, y1, j); });
@@ -642,7 +643,7 @@ window.GALAXI_BOSS = {
         const x = Math.max(box.left + 10, Math.min(box.right - 10, a.soul.x)); let t = 0; a.sfx.charge();
         a.bullet({ x, y: (box.top + box.bottom) / 2, w: 2, h: box.height, damage: 0,
           update(w, dt) { if ((t += dt) < 650) return; w.dead = true; strike(x); },
-          draw(ctx, w) { if (Math.floor(t / 70) % 2) return; ctx.fillStyle = "#fff"; ctx.globalAlpha = .7; ctx.fillRect(-1, -w.h / 2, 2, w.h); } });
+          draw(ctx, w) { const k = TELL(t); if (!k) return; ctx.fillStyle = "#fff"; ctx.globalAlpha = .7 * k; ctx.fillRect(-1, -w.h / 2, 2, w.h); } }); // a quick flash, gone before it strikes
       };
       const strike = x => { let t = 0; a.sfx.beam();
         a.bullet({ x, y: (box.top + box.bottom) / 2, w: 16, h: box.height, damage: 4,
