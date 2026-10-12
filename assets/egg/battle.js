@@ -54,7 +54,7 @@
     const img = src => { const i = new Image(); i.src = src.startsWith("http") ? src : base + src; return i; };
     const sprite = img(boss.sprite), images = {}; let foeSprite = sprite; // foeSprite: what he looks like right now (api.setSprite)
     for (const [k, v] of Object.entries(boss.images || {})) images[k] = img(v);
-    const ui = { bubble: img("assets/egg/ui/blconwdshrt.png"), hpname: img("assets/egg/ui/hpname.png"), dmgnum: img("assets/egg/ui/dmgnum_o.png"), miss: img("assets/egg/ui/dmgmiss_o.png"), // UNDERTALE's, from Galaxi's copy
+    const ui = { gameover: img("assets/egg/ui/gameover.png"), bubble: img("assets/egg/ui/blconwdshrt.png"), hpname: img("assets/egg/ui/hpname.png"), dmgnum: img("assets/egg/ui/dmgnum_o.png"), miss: img("assets/egg/ui/dmgmiss_o.png"), // UNDERTALE's, from Galaxi's copy
       bt: { FIGHT: img("assets/egg/ui/fightbt.png"), ACT: img("assets/egg/ui/talkbt.png"), ITEM: img("assets/egg/ui/itembt.png"), MERCY: img("assets/egg/ui/sparebt.png") }, // 110x42, frame 2 = selected
       target: img("assets/egg/ui/target.png"), cursor: img("assets/egg/ui/target-cursor.png"), slice: img("assets/egg/ui/slice.png") }; // UNDERTALE spr_target, spr_targetchoice (2 frames), spr_slice_o (6 frames)
 
@@ -151,7 +151,7 @@
       menuIx = 0; turn = 0; bullets = []; timers = []; fx = []; clock = 0; outro = null;
       box = { x: 32, y: 250, w: MW, h: MH, tw: MW, th: MH, ox: 0, oy: 0 }; // ox/oy: a meta event dragging the box around
       soul = { x: 320, y: 320, inv: 0, dead: 0 };
-      flavor = ""; firstFlavor = null; boxLine = null; shards = []; deadLine = null; planEvents();
+      flavor = ""; firstFlavor = null; boxLine = null; deadLine = null; planEvents();
       // the opening, every time (first fight and every retry): black screen, the SOUL blinks 3 times with the encounter
       // beep, drops onto the FIGHT button, then the UI appears and the music starts over from the top
       stopMusic(); state = "intro"; introStep = 0;
@@ -297,6 +297,7 @@
       menu(fn) { menuHooks.push(fn); },                                                   // fn(labels) at the next menu: rearrange the 4 button labels (put back after one pick)
       modal(update, draw) { modal = { update, draw, t: 0 }; },                            // freeze everything: update(dt, input) each frame until it returns true; draw(ctx, t)
       pause(ms, draw) { modal = { update: (dt, i, m) => m.t >= ms, draw, t: 0 }; },      // freeze everything for ms
+      fakeDeath(ms) { const d = deathScreen(soul.x, soul.y); modal = { update: (dt, i, m) => { d.update(m.t, dt); return m.t >= ms; }, draw: (c, t) => d.draw(t), t: 0 }; }, // the real death screen for ms (the music keeps going: the tell)
       sprite: n => eventSprites[n] || (eventSprites[n] = img(`assets/egg/events/sprites/${n}.png`)), // an editable PNG from events/sprites/ (draw it once .naturalWidth is set)
       foe, player, sfx, play, story: storyMode, speak: () => speak(boss.voice), heart: (x, y, col) => heart(x, y, col), text: (...a) => text(...a), wrapText: (...a) => wrapText(...a),
     });
@@ -394,13 +395,25 @@
     let outro = null;
     function spare() { state = "end"; foe.spared = true; sfx.spare(); say([].concat(boss.onSpare(foe)), exit); }
     // Undertale's death: the SOUL freezes, cracks, shatters into falling shards, then GAME OVER fades in and a line is typed out
-    let shards = [], deadLine = null;
+    let deadLine = null, death = null;
+    // the death screen's whole timeline in one place, so the fake one (events/fakeover.js) is the real one frame for frame:
+    // update(t, dt) plays its sounds and types the line, draw(t) draws it all over black. t: ms since the heart froze
+    function deathScreen(sx, sy) {
+      const sh = Array.from({ length: 6 }, (_, i) => ({ vx: (i - 2.5) * 1.3 + Math.random() - .5, vy: -3 - Math.random() * 2 })), done = {}, line = { text: vary(boss.onDeath) || "Stay determined!", n: 0, t: 0 };
+      const once = (t, k, at, fn) => { if (t >= at && !done[k]) { done[k] = true; fn(); } };
+      return { line,
+        update(t, dt) { once(t, "crack", 650, sfx.crack); once(t, "shatter", 1450, sfx.shatter); once(t, "voice", 4000, () => boss.onDeathSound && play(boss.onDeathSound, boss.voiceVolume ?? 1));
+          if (t > 4000) type(line, dt, boss.narrator || SFX.txt1); },
+        draw(t) { ctx.fillStyle = "#000"; ctx.fillRect(0, 0, W, H);
+          if (t < 650) heart(sx, sy); else if (t < 1450) { heart(sx - 2, sy, "#f00", -1); heart(sx + 2, sy, "#f00", 1); } // cracked down the middle
+          else { const f = (t - 1450) / 16.7; for (const p of sh) pixels(["0110", "1111", "0110"], sx + p.vx * f - 4, sy + p.vy * f + .125 * f * f - 3, 2, "#f00"); } // the shards fall
+          if (t > 2600 && ui.gameover.naturalWidth) { ctx.globalAlpha = Math.min(1, (t - 2600) / 1200); ctx.drawImage(ui.gameover, 0, 36); ctx.globalAlpha = 1; } // UNDERTALE's spr_gameoverbg
+          if (t > 4000) { drawRows(BMF.main, line.text, line.n, 120, 324, 400);
+            if (line.n >= line.text.length) { const h = (s, y) => bmText(BMF.curs, s, Math.round(320 - bmWidth(BMF.curs, s) / 2), y, "#808080"); h("Z / tap: try again    X: leave", 424); h("R / tap here: replay with dialogue", 452); } } } };
+    }
     function gameOver() {
       deaths++; soul.dead = 1; state = "dead"; clock = 0; bullets = []; stopMusic();
-      setTimeout(sfx.crack, 650);
-      setTimeout(() => { sfx.shatter(); shards = Array.from({ length: 6 }, (_, i) => ({ x: soul.x, y: soul.y, vx: (i - 2.5) * 1.3 + Math.random() - .5, vy: -3 - Math.random() * 2 })); }, 1450);
-      if (boss.onDeathSound) setTimeout(() => play(boss.onDeathSound, boss.voiceVolume ?? 1), 4000);
-      deadLine = { text: vary(boss.onDeath) || "Stay determined!", n: 0, t: 0 };
+      death = deathScreen(soul.x, soul.y); deadLine = death.line;
     }
     function exit() { cleanup(); }
 
@@ -692,8 +705,7 @@
         bullets = bullets.filter(b => !b.dead);
         if (clock >= attackEnd && (clock >= attackEnd + 2500 || !bullets.some(live))) endDodge(); // time's up: let what's already flying finish first (2.5s at most)
       } else if (state === "dead") {
-        for (const p of shards) { p.x += p.vx * dt / 16.7; p.y += p.vy * dt / 16.7; p.vy += .25 * dt / 16.7; }
-        if (clock > 4000 && deadLine) type(deadLine, dt, boss.narrator || SFX.txt1);
+        death.update(clock, dt);
         if (clock > 4000 && (hit.has("r") || inside(tap, 140, 452, 360, 28))) reset(true);
         else if (clock > 4000 && (confirm() || tap)) reset(false);
         if (clock > 4000 && cancel()) cleanup();
@@ -856,20 +868,7 @@
         ctx.globalAlpha = 1 - age / 900; ctx.fillRect(Math.round(X + p.x * k + p.vx * age), Math.round(Y + p.y * k + p.vy * age), k, k); }
       ctx.globalAlpha = 1;
     }
-    function drawDead() {
-      if (clock < 650) heart(soul.x, soul.y);
-      else if (clock < 1450) { heart(soul.x - 2, soul.y, "#f00", -1); heart(soul.x + 2, soul.y, "#f00", 1); } // cracked down the middle
-      for (const p of shards) pixels(["0110", "1111", "0110"], p.x - 4, p.y - 3, 2, "#f00");
-      if (clock > 2600) {
-        ctx.globalAlpha = Math.min(1, (clock - 2600) / 1200);
-        text("GAME", 320, 150, 120, "#fff", "center", SANS); text("OVER", 320, 250, 120, "#fff", "center", SANS);
-        ctx.globalAlpha = 1;
-      }
-      if (deadLine && clock > 4000) {
-        wrapText(deadLine.text.slice(0, deadLine.n), 420, 32).forEach((l, i) => text(l, 140, 340 + i * 34, 32));
-        if (deadLine.n >= deadLine.text.length) { text("Z / tap: try again    X: leave", 320, 440, 22, "#777", "center"); text("R / tap here: replay with dialogue", 320, 470, 22, "#777", "center"); }
-      }
-    }
+    function drawDead() { death.draw(clock); }
 
     function cleanup() {
       cancelAnimationFrame(raf); removeEventListener("keydown", kd, true); removeEventListener("keyup", ku, true); removeEventListener("resize", fit);
