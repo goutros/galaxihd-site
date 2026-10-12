@@ -325,7 +325,7 @@ document.querySelectorAll("[data-count]").forEach(async el => {
   } catch {}
 });
 
-// headline view numbers from stats.json (update_videos.py, refreshed daily): data-key picks the figure. 3 significant
+// headline view numbers from stats.json (update_videos.py, refreshed every 30 min): data-key picks the figure. 3 significant
 // figures rounded down (1.14M, 11.4M, 114M) so it never overstates; the big one rolls up from 0 when it first scrolls
 // into view and hovering its tile shows the exact total. data-plain = just the short figure, no roll or hover.
 document.querySelectorAll("[data-stat]").forEach(async el => {
@@ -609,7 +609,7 @@ document.querySelectorAll("[data-live]").forEach(el => {
     const breakIt = async () => {
       busy = true; holding = false; sound("dig_stone", 4, 1, .8);
       particles(av, tex(), 64, true); av.style.visibility = "hidden"; show(-1); shown = -1; progress = 0;
-      try { if (!window.startBattle) { await load("assets/egg/boss.js"); await load("assets/egg/battle.js"); } } catch { av.style.visibility = ""; busy = false; return; }
+      try { if (!window.startBattle) { await load("assets/egg/boss.js"); await load("assets/egg/battle.js"); await Promise.all((window.GALAXI_BOSS.eventFiles || []).map(n => load(`assets/egg/events/${n}.js`).catch(() => {}))); } } catch { av.style.visibility = ""; busy = false; return; } // events: a missing one just never happens
       setTimeout(() => { av.style.visibility = ""; busy = false; try { window.startBattle(window.GALAXI_BOSS, base); } catch {} }, 650); // let the particles fly first
     };
     const tick = now => {

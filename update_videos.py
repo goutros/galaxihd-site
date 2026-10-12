@@ -1,9 +1,9 @@
 """Refresh videos.json (GalaxiHD long-forms), shorts.json (newest 7 Shorts) and clients.json (client videos crediting @GalaxiHD).
 
-Runs daily from GitHub Actions; standard library only.
+Runs every 30 minutes from GitHub Actions; standard library only.
 ponytail: YouTube RSS returns the newest 15 videos per feed, so videos.json holds the latest 15
 long-forms. clients.json accumulates, so older client videos stay once found; all their view counts
-refresh daily from each watch page (a failed read keeps the last known count).
+refresh every run from each watch page (a failed read keeps the last known count).
 """
 import json
 import re
@@ -55,7 +55,7 @@ def live_views(video_id):
     try:
         m = re.search(r'"videoDetails":\{.*?"viewCount":"(\d+)"', urllib.request.urlopen(req, timeout=30).read().decode())
         return int(m.group(1)) if m else None
-    except Exception:  # one bad page must not stop the daily run; that video keeps its last known count
+    except Exception:  # one bad page must not stop the run; that video keeps its last known count
         return None
 
 

@@ -1,12 +1,15 @@
 name: Update videos
 on:
   schedule:
-    - cron: "0 20 * * *"   # daily, 06:00 Brisbane
+    - cron: "*/30 * * * *"   # every 30 min: new uploads show up on the site within ~30-40 min (the page re-reads the lists on every load)
   workflow_dispatch:
   push:
     paths: ["assets/fanart/**"]   # new fanart rebuilds fanart.json
 permissions:
   contents: write
+concurrency:   # one run at a time, so two runs never race to push
+  group: update-videos
+  cancel-in-progress: false
 jobs:
   update:
     runs-on: ubuntu-latest

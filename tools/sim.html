@@ -11,9 +11,34 @@
   few frames ahead and steps out of the way (a decent human), <b>still</b> (never moves) and <b>random</b> (mashes directions). Fewer bot hits =
   more readable; the gap to still/random is how much dodging matters. Run: open <code>localhost:8765/tools/sim.html</code>, or call
   <code>sim.run()</code> / <code>sim.run([2, 4])</code> from the console. <code>sim.dialogue()</code> plays every route (each menu pick for 2 loops, FIGHT hit/miss, win, flee, 12 deaths + replay, the phone game's three endings) and lists any line in boss.js that never reached the screen. Results are also on <code>window.simResult</code>.</p>
+<details id="dev" open style="position:fixed;top:8px;left:8px;z-index:100000;background:#0c1838ee;border:1px solid #2a4170;border-radius:6px;padding:6px 10px;max-width:min(600px,calc(100vw - 90px))">
+  <summary><b>Event dev menu</b> <span style="opacity:.7">(edit an event file or battle.js, then press <kbd>`</kbd> to replay it with your changes)</span></summary>
+  <div id="evbtns" style="margin:6px 0"></div>
+  turn <select id="evturn"></select> &nbsp; dodge speed <select id="evspeed"><option>0.25</option><option>0.5</option><option selected>1</option><option>1.25</option><option>1.5</option></select>
+  &nbsp; <label><input type="checkbox" id="evgod" checked> can't die</label> &nbsp; <label><input type="checkbox" id="evstory" checked> dialogue</label>
+</details>
 <div id="out"></div>
 <script src="../assets/egg/boss.js"></script>
 <script src="../assets/egg/battle.js"></script>
+<script>for (const n of GALAXI_BOSS.eventFiles || []) document.write(`<script src="../assets/egg/events/${n}.js"><\/script>`); // the meta events</script>
+<script src="train.js"></script>
+<script src="evolve.js"></script>
+<script>// dev menu: play any event for real, on the turn you pick, with the event files re-read every time (no page reload)
+const ORIG_SPEEDS = GALAXI_BOSS.turnSpeeds; let last, ours; // ours: the fight the menu started (sim/train fights never get can't-die)
+const load = src => new Promise(r => { const s = document.createElement("script"); s.src = `${src}?v=${Date.now()}`; s.onload = s.onerror = () => { s.remove(); r(); }; document.head.append(s); });
+const reloadEvents = async () => { await load("../assets/egg/battle.js"); await Promise.all(GALAXI_BOSS.eventFiles.map(n => load(`../assets/egg/events/${n}.js`))); }; // the engine (an IIFE, safe to re-run) + every event; a syntax error keeps the old version (see the console)
+async function playEvent(events) {
+  last = events; document.getElementById("ut-battle")?.querySelector("button")?.click(); await reloadEvents();
+  const k = +evspeed.value, turn = +evturn.value; // ponytail: dodge speed rides on boss.turnSpeeds (dodging only, menus/dialogue stay 1x); speed 1 puts the real ones back
+  GALAXI_BOSS.turnSpeeds = k === 1 ? ORIG_SPEEDS : GALAXI_BOSS.turns.map((_, i) => ((ORIG_SPEEDS || [])[i] || 1) * k);
+  startBattle(GALAXI_BOSS, "../", events ? { story: evstory.checked, turn, events, eventFrom: turn } : { story: evstory.checked });
+  ours = document.getElementById("ut-battle"); ours.style.transform = "none";
+}
+GALAXI_BOSS.turns.forEach((t, i) => i && evturn.add(new Option(`${i} ${t.attack}${t.sneak ? " (no events)" : ""}`, i, false, i === 1)));
+for (const n of [null, ...GALAXI_BOSS.eventFiles]) { const b = document.createElement("button"); b.textContent = n || "normal fight (random events)"; b.onclick = () => playEvent(n && [n]); evbtns.append(b, " "); }
+addEventListener("keydown", e => { if (e.key === "`" && last !== undefined) { e.preventDefault(); playEvent(last); } });
+(function god() { const e = window.__egg; if (evgod.checked && e && ours && document.getElementById("ut-battle") === ours) e.player.hp = e.player.max; requestAnimationFrame(god); })(); // can't die: HP refilled every frame (hits still flash and count)
+</script>
 <script>
 const FRAME = 1000 / 60, DIRS = [[], ["ArrowUp"], ["ArrowDown"], ["ArrowLeft"], ["ArrowRight"], ["ArrowUp", "ArrowLeft"], ["ArrowUp", "ArrowRight"], ["ArrowDown", "ArrowLeft"], ["ArrowDown", "ArrowRight"]];
 const vec = keys => [(keys.includes("ArrowRight") ? 1 : 0) - (keys.includes("ArrowLeft") ? 1 : 0), (keys.includes("ArrowDown") ? 1 : 0) - (keys.includes("ArrowUp") ? 1 : 0)];
@@ -48,7 +73,7 @@ function botKeys(E, attack) {
 // one turn with one player; returns hits, damage, length and a few frames
 async function runTurn(i, player, frames) { // async: some attacks are scripted with await, so every frame yields for them
   document.getElementById("ut-battle")?.querySelector("button")?.click(); window.__egg = undefined;
-  startBattle(GALAXI_BOSS, "../", { turn: i, sim: true });
+  startBattle(GALAXI_BOSS, "../", { turn: i, sim: true, events: [] }); // no meta events: clean numbers
   const E = window.__egg, attack = GALAXI_BOSS.turns[i].attack, shots = [];
   let hits = 0, damage = 0, lastHp = E.player.hp, t = 0, inDodge = 0, randomKeys = [], peak = 0;
   for (; t < 60000; t += FRAME) {
@@ -89,7 +114,7 @@ const clean = s => s && s.replace(/^\* /, "").trim();
 // one playthrough. choose(E, n) returns the menu pick for the n-th menu as [button, option] (or a function that acts itself)
 async function play(opts, choose, log, label) {
   document.getElementById("ut-battle")?.querySelector("button")?.click(); window.__egg = undefined;
-  startBattle(GALAXI_BOSS, "../", { sim: true, story: true, ...opts });
+  startBattle(GALAXI_BOSS, "../", { sim: true, story: true, events: [], ...opts });
   const E = window.__egg; let menus = 0, aimWait = 0, holdHp = false, t = 0, prev = "", died = 0;
   const see = s => { s = s && (typeof s === "string" ? s : s.text); if (s && typeof s !== "string") log.add("UNRESOLVED: " + JSON.stringify(s).slice(0, 80)); else if (s) log.add(s); }; // UNRESOLVED: a one(...) that reached the screen as an object
   for (; t < (opts.limit || 400000) && document.getElementById("ut-battle"); t += FRAME) {
@@ -156,7 +181,35 @@ async function dialogue() {
 let zDown = false; // a square is picked with the keyboard (cursor + Z): a hidden pane has no size, so a tap can't land on the board
 function tapCell(E, i) { E.ttt.cur = i; zDown = !zDown; E.keys(zDown ? ["z"] : []); }
 
-window.sim = { runTurn, dialogue, async run(only) {
+// ---------- meta events: force each one onto a turn it fits, play it with the bot, catch errors, check it did something, keep frames ----------
+async function events(only) {
+  const all = window.GALAXI_EVENTS || {}, names = only || Object.keys(all), out = [], errs = [];
+  const oe = console.error; console.error = (...a) => { errs.push(a.map(String).join(" ").slice(0, 160)); oe(...a); };
+  for (const name of names) {
+    errs.length = 0; const T = GALAXI_BOSS.turns, said = new Set(), shots = [];
+    const turn = T.findIndex(t => !t.sneak && (!all[name].can || all[name].can({ turn: t, attack: t.attack, foe: { hp: 160, max: 160, flags: {}, uses: {} }, player: { hp: 20, max: 20, items: [{ name: "Golden Carrot", heal: 15 }] }, loop: 0, story: true })));
+    if (turn < 0) { out.push({ name, error: "can() never true" }); continue; }
+    document.getElementById("ut-battle")?.querySelector("button")?.click(); window.__egg = undefined;
+    startBattle(GALAXI_BOSS, "../", { sim: true, story: true, turn, events: [name], eventFrom: turn });
+    const E = __egg, hp0 = E.foe.hp, items0 = E.player.items.length; let modal = 0, maxOx = 0, zoom = 1, mods = {}, dodges = 0, prev = "", t = 0, frame = 0;
+    for (; t < 90000; t += FRAME, frame++) {
+      const st = E.state; if (st === "dodge" && prev !== "dodge") dodges++; prev = st;
+      for (const s of [E.talk, E.bubble]) if (s && s.text) said.add(typeof s.text === "string" ? s.text : JSON.stringify(s.text));
+      if (E.modal) { modal++; E.keys(frame % 20 === 0 ? [modal % 40 < 20 ? "ArrowDown" : "z"] : []); } // poke at a modal: move, then confirm
+      else if (st === "talk" || st === "text") E.keys(t % 200 < FRAME ? ["z"] : []);
+      else if (st === "dodge") E.keys(botKeys(E, T[turn].attack));
+      else if (st === "menu" || st === "end" || st === "dead") break; else E.keys([]);
+      if (E.cur) { maxOx = Math.max(maxOx, Math.abs(E.box.ox) + Math.abs(E.box.oy)); zoom = Math.max(zoom, E.cur.zoom || 1); Object.assign(mods, E.cur.mods); }
+      E.tick(FRAME); await null; E.player.hp = E.player.max;
+      if (frame % 45 === 0 && (st === "dodge" || E.modal || st === "talk") && shots.length < 12) { const c = document.createElement("canvas"); c.width = 320; c.height = 240; c.getContext("2d").drawImage(E.canvas, 0, 0, 320, 240); shots.push(c.toDataURL("image/jpeg", .7)); }
+    }
+    out.push({ name, turn: T[turn].attack, endState: E.state, seconds: +(t / 1000).toFixed(1), dodges, modalFrames: modal, boxMoved: Math.round(maxOx), zoom, mods: JSON.stringify(mods), foeHealed: E.foe.hp - hp0, itemsTaken: items0 - E.player.items.length, said: [...said].slice(0, 6), errors: [...errs], shots });
+  }
+  console.error = oe;
+  document.getElementById("out").innerHTML = out.map(r => `<h3>${r.name} (${r.turn})</h3><pre>${JSON.stringify({ ...r, shots: undefined }, null, 1)}</pre><div class="sheet">${(r.shots || []).map(s => `<img src="${s}">`).join("")}</div>`).join("");
+  return out.map(({ shots, ...r }) => r);
+}
+window.sim = { runTurn, dialogue, events, async run(only) {
   const out = document.getElementById("out"), rows = [], turns = only || GALAXI_BOSS.turns.map((_, i) => i);
   out.innerHTML = "<p>running...</p>";
   for (const i of turns) {
@@ -168,5 +221,13 @@ window.sim = { runTurn, dialogue, async run(only) {
     + rows.map(r => `<h3>${r.turn}: ${r.attack} (a frame a second, bot playing)</h3><div class="sheet">${r.shots.map(s => `<img src="${s}">`).join("")}</div>`).join("");
   return window.simResult = rows.map(({ shots, ...r }) => r);
 } };
+// tools/job.py: #job=<expression> runs it here (headless Chrome) and posts the JSON back
+if (location.hash.startsWith("#job=")) (async () => {
+  await Promise.all(['32px "DTM-Mono"', '32px "DTM-Sans"'].map(f => document.fonts.load(f)));
+  const post = (path, body) => fetch(path, { method: "POST", body });
+  train.progress = msg => post("/progress", typeof msg === "string" ? msg : JSON.stringify(msg));
+  try { await post("/result", JSON.stringify(await eval(decodeURIComponent(location.hash.slice(5))))); }
+  catch (e) { await post("/result", JSON.stringify({ error: String(e && e.stack || e) })); }
+})();
 </script>
 </body></html>
