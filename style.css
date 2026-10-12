@@ -14,6 +14,7 @@
     --blurple: #5865f2;
     --sk1: #e7eef7;
     --sk2: #f6f9fd;
+    --glass1: #04184f; --glass2: #033194; /* --bg1/--bg2 through saturate(170%): what the frosted glass used to show */
   }
   @media (prefers-color-scheme: dark) {
     :root {
@@ -30,6 +31,7 @@
       --soft: #1c3a66;
       --sk1: #1a3358;
       --sk2: #24436f;
+      --glass1: #010b2a; --glass2: #011d5a;
     }
   }
   * { box-sizing: border-box; }
@@ -126,11 +128,14 @@
   .glass {
     --text: #f2f8ff; --muted: #b9cbe6; --soft: rgba(255, 255, 255, .08);
     position: relative; isolation: isolate; color: var(--text);
-    background: linear-gradient(135deg, rgba(255, 255, 255, .17), rgba(255, 255, 255, .05) 45%, rgba(46, 197, 245, .12));
-    -webkit-backdrop-filter: blur(16px) saturate(170%); backdrop-filter: blur(16px) saturate(170%);
+    --glass: linear-gradient(135deg, rgba(255, 255, 255, .17), rgba(255, 255, 255, .05) 45%, rgba(46, 197, 245, .12));
+    /* no backdrop-filter on the big cards: blurring a sky of twinkling stars re-blurs every frame (Firefox/Zen, software rendering).
+       They only ever sit on the sky, so a fixed copy of the sky gradient (pre-saturated) looks the same for free */
+    background: var(--glass), linear-gradient(180deg, var(--glass1), var(--glass2)) fixed;
     border: 1px solid rgba(255, 255, 255, .22);
     box-shadow: var(--shadow), inset 0 1px 0 rgba(255, 255, 255, .4), inset 0 -1px 0 rgba(255, 255, 255, .08);
   }
+  .top .glass { background: var(--glass); -webkit-backdrop-filter: blur(16px) saturate(170%); backdrop-filter: blur(16px) saturate(170%); } /* the menu floats over content, so it keeps real frost (small, cheap) */
   .glass .avatar { border-color: rgba(255, 255, 255, .35); }
   .glass .social.x svg, .glass .social.tt svg { color: var(--text); } /* black logos vanish on glass */
   .glass::before { /* soft light catching the top-left edge */
@@ -143,11 +148,14 @@
   .work .cta-mail { background: rgba(255, 255, 255, .12); border: 1px solid rgba(255, 255, 255, .25); transition: transform .15s ease, background .25s ease; }
   .work .cta-mail:hover { background: rgba(255, 255, 255, .2); }
   .glass { transition: border-color .3s ease, box-shadow .3s ease; }
+  @property --mx { syntax: "<length>"; inherits: false; initial-value: 300px; } /* not inherited: a mouse move restyles only the card, not everything inside it */
+  @property --my { syntax: "<length>"; inherits: false; initial-value: 300px; }
   .glass::after { /* light that follows the mouse (site.js); fades out when the mouse leaves */
     content: ""; position: absolute; left: 0; top: 0; width: 600px; height: 600px; z-index: -1; pointer-events: none;
     opacity: 0; transition: opacity .4s ease; will-change: transform; /* moved, never repainted */
+    --mx: inherit; --my: inherit; /* the one place that reads them */
     background: radial-gradient(circle, rgba(255, 255, 255, .16), transparent 50%);
-    transform: translate(calc(var(--mx, 300px) - 300px), calc(var(--my, 300px) - 300px));
+    transform: translate(calc(var(--mx) - 300px), calc(var(--my) - 300px));
   }
   .glass:hover::after { opacity: 1; }
   .glass:hover { border-color: rgba(143, 227, 255, .45); box-shadow: var(--shadow-hover), 0 0 40px rgba(46, 197, 245, .18), inset 0 1px 0 rgba(255, 255, 255, .45); }
