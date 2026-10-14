@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0c1838" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#050b1d" media="(prefers-color-scheme: dark)">
+<title>Work With Me · GalaxiHD</title>
+<meta name="description" content="Minecraft &amp; gaming video editor and Official CurseForge Partner. 270+ client videos, 4M+ views. Shorts from US$450, long-form quotes and channel sponsorships.">
+<meta property="og:title" content="Work With Me · GalaxiHD">
+<meta property="og:url" content="https://galaxihd.com/hire/">
+<meta property="og:description" content="Minecraft &amp; gaming video editor and Official CurseForge Partner. 270+ client videos, 4M+ views. Shorts from US$450, long-form quotes and channel sponsorships.">
+<meta property="og:image" content="https://galaxihd.com/assets/banner.jpg">
+<link rel="icon" href="../assets/logo.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css?v=202610142500">
+</head>
+<body>
+<header class="top" id="top">
+  <button class="menu-btn glass" id="menuBtn" aria-label="Menu" aria-expanded="false" aria-controls="panel"><span></span><span></span><span></span></button>
+</header>
+<nav class="panel glass" id="panel" aria-label="Site menu">
+  <a href="../"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11 12 3.5l9 7.5"/><path d="M5.5 9.5V20h5v-5.5h3V20h5V9.5"/></svg>Home</a>
+  <a href="#top" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="2.5"/><path d="M8.5 7V5.5a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2V7M3 12.5h18"/></svg>Work With Me</a>
+  <a class="sec" href="#shorts">Shorts</a>
+  <a class="sec" href="#clients">CurseForge Partnership</a>
+  <a class="sec" href="#rates">Rates</a>
+  <a class="sec" href="#faq">FAQ</a>
+  <a class="sec" href="#terms" data-terms>Terms &amp; Conditions</a>
+  <a class="sec" href="#contact">Sponsorships &amp; Contact</a>
+  <a href="../fanart/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18c1.2 0 1.6-.8 1.6-1.6 0-.9-.8-1.3-.8-2.1 0-.9.7-1.6 1.6-1.6H17a4 4 0 0 0 4-4C21 6.8 17 3 12 3Z"/><circle cx="7.5" cy="11" r="1.2"/><circle cx="10.5" cy="7.2" r="1.2"/><circle cx="15" cy="7.5" r="1.2"/></svg>Fanart</a>
+</nav>
+<main>
+  <!-- Portfolio + Hire in one page (galaxihd.com/hire redirects here). Order follows the buyer: promise, proof, why, price, process, doubts, contact -->
+  <section class="card glass hire-hero" id="home">
+    <div class="profile-mini">
+      <img class="avatar" src="../assets/logo.jpg" alt="GalaxiHD avatar">
+      <div>
+        <h1>Work With Me</h1>
+        <p class="sub">Minecraft editor &amp; creator · Official CurseForge Partner</p>
+      </div>
+    </div>
+    <p class="pitch">Modded Minecraft videos, edited for your channel or sponsored on mine.</p>
+    <ul class="proof">
+      <li><b>270+</b> videos made for clients</li>
+      <li><b>4M+</b> views on client videos</li>
+      <li><b>Every month</b> on deadline for CurseForge since 2024</li>
+    </ul>
+    <div class="cta">
+      <a class="pill cta-hire" href="#rates">See rates &amp; book →</a>
+      <a class="pill cta-ghost" href="#contact">Sponsor my channel ↓</a>
+    </div>
+    <!-- availability: policy = max 2 monthly clients at a time (2026-10-13). Keep it TRUE: change to "Waitlist open" when both are taken -->
+    <p class="avail"><span class="dot" aria-hidden="true"></span>Open for new projects · max 2 monthly clients at a time</p>
+  </section>
+
+  <section class="card section" id="shorts" aria-labelledby="shorts-h">
+    <div class="section-head">
+      <h2 id="shorts-h">Shorts I've Made</h2>
+      <div class="pager">
+        <button class="pg" data-dir="-1" aria-label="Previous Shorts" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6-6 6 6 6"/></svg></button>
+        <button class="pg" data-dir="1" aria-label="Next Shorts"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 6 6 6-6 6"/></svg></button>
+      </div>
+    </div>
+    <p class="lede">My most-watched, for CurseForge and my own channel.</p>
+    <div class="shorts" data-src="../client_shorts.json, ../shorts.json" data-sort="views">
+      <a class="shorts-yt" href="https://www.youtube.com/@GalaxiHD/shorts">Continue on YouTube<span aria-hidden="true">→</span></a>
+    </div>
+  </section>
+
+  <section class="card section" id="clients" aria-labelledby="clients-h">
+    <h2 id="clients-h" class="brand-h"><svg aria-hidden="true"><use href="#i-cf"/></svg>CurseForge Partnership</h2>
+    <p class="lede">Since 2024 I've made mod showcase videos for CurseForge's YouTube channel, and my long-forms are also reworked into short-form content.</p>
+    <!-- ponytail: hand-rounded from stats.json (views_all - channel_views = client views, 4.10M on 2026-10-13); bump now and then -->
+    <p class="result"><b>270+ videos</b> and <b>4M+ views</b> for one client, delivered on deadline every month.</p>
+    <div class="grid" data-src="../clients.json" data-show="3" data-yt="https://www.youtube.com/@CurseForge/search?query=GalaxiHD"></div>
+  </section>
+
+  <section class="card section" id="videos" aria-labelledby="videos-h">
+    <h2 id="videos-h">Original Content</h2>
+    <p class="lede">My latest long-form videos.</p>
+    <div class="grid" data-src="../videos.json" data-show="3" data-yt="https://www.youtube.com/@GalaxiHD/videos"></div>
+  </section>
+
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="i-cf" viewBox="0 0 24 24"><path fill="currentColor" d="M18.326 9.2145S23.2261 8.4418 24 6.1882h-7.5066V4.4H0l2.0318 2.3576V9.173s5.1267-.2665 7.1098 1.2372c2.7146 2.516-3.053 5.917-3.053 5.917L5.0995 19.6c1.5465-1.4726 4.494-3.3775 9.8983-3.2857-2.0565.65-4.1245 1.6651-5.7344 3.2857h10.9248l-1.0288-3.2726s-7.918-4.6688-.8336-7.1127z"/></symbol><symbol id="i-mr" viewBox="0 0 24 24"><path fill="currentColor" d="M12.252.004a11.78 11.768 0 0 0-8.92 3.73 11 10.999 0 0 0-2.17 3.11 11.37 11.359 0 0 0-1.16 5.169c0 1.42.17 2.5.6 3.77.24.759.77 1.899 1.17 2.529a12.3 12.298 0 0 0 8.85 5.639c.44.05 2.54.07 2.76.02.2-.04.22.1-.26-1.7l-.36-1.37-1.01-.06a8.5 8.489 0 0 1-5.18-1.8 5.34 5.34 0 0 1-1.3-1.26c0-.05.34-.28.74-.5a37.572 37.545 0 0 1 2.88-1.629c.03 0 .5.45 1.06.98l1 .97 2.07-.43 2.06-.43 1.47-1.47c.8-.8 1.48-1.5 1.48-1.52 0-.09-.42-1.63-.46-1.7-.04-.06-.2-.03-1.02.18-.53.13-1.2.3-1.45.4l-.48.15-.53.53-.53.53-.93.1-.93.07-.52-.5a2.7 2.7 0 0 1-.96-1.7l-.13-.6.43-.57c.68-.9.68-.9 1.46-1.1.4-.1.65-.2.83-.33.13-.099.65-.579 1.14-1.069l.9-.9-.7-.7-.7-.7-1.95.54c-1.07.3-1.96.53-1.97.53-.03 0-2.23 2.48-2.63 2.97l-.29.35.28 1.03c.16.56.3 1.16.31 1.34l.03.3-.34.23c-.37.23-2.22 1.3-2.84 1.63-.36.2-.37.2-.44.1-.08-.1-.23-.6-.32-1.03-.18-.86-.17-2.75.02-3.73a8.84 8.839 0 0 1 7.9-6.93c.43-.03.77-.08.78-.1.06-.17.5-2.999.47-3.039-.01-.02-.1-.02-.2-.03Zm3.68.67c-.2 0-.3.1-.37.38-.06.23-.46 2.42-.46 2.52 0 .04.1.11.22.16a8.51 8.499 0 0 1 2.99 2 8.38 8.379 0 0 1 2.16 3.449 6.9 6.9 0 0 1 .4 2.8c0 1.07 0 1.27-.1 1.73a9.37 9.369 0 0 1-1.76 3.769c-.32.4-.98 1.06-1.37 1.38-.38.32-1.54 1.1-1.7 1.14-.1.03-.1.06-.07.26.03.18.64 2.56.7 2.78l.06.06a12.07 12.058 0 0 0 7.27-9.4c.13-.77.13-2.58 0-3.4a11.96 11.948 0 0 0-5.73-8.578c-.7-.42-2.05-1.06-2.25-1.06Z"/></symbol></svg>
+
+  <section class="card section" id="why" aria-labelledby="why-h">
+    <h2 id="why-h">Why Me?</h2>
+    <ul class="why">
+      <li><b>Modded is my day job</b>I review mods for CurseForge every month and code my own (<a href="https://www.curseforge.com/minecraft/mc-mods/extractrooms">Extractrooms</a>, 11K+ downloads). No need to explain how a mod works. I've probably already used it.</li>
+      <li><b>More than an editor</b>I also write scripts, mix audio, design thumbnails and make custom Minecraft models and textures. If your video needs it, I can probably make it.</li>
+      <li><b>Every second earns its spot</b>I cut my own Shorts for retention, and it's pulled 4M+ views on my channel. Your video gets the same treatment.</li>
+      <li><b>On time, every time</b>270+ CurseForge videos across two years of monthly deadlines. Your upload day stays your upload day.</li>
+    </ul>
+  </section>
+
+  <!-- prices: change the numbers here only; the Book buttons pre-fill the package name into the email -->
+  <section class="card section" id="rates" aria-labelledby="rates-h">
+    <h2 id="rates-h">Rates</h2>
+    <p class="incl">Same standard as my own, ready for Shorts, TikTok and Reels. 1 revision included. Your footage: all yours, ads included. Shorts I make: paid ads quoted separately.</p>
+    <div class="tiers">
+      <div class="tier">
+        <h3>Single Short</h3>
+        <!-- prices are Continuum images: change via tools/render_continuum.py -->
+        <p class="price"><span class="ct" role="img" aria-label="450 US dollars" style="--m:url(../assets/ct/450.png);--w:2.652"></span><small>USD per Short · an easy trial</small></p>
+        <ul><li>One 45–60s vertical edit</li><li>First cut within 3 days</li><li>Rush in 48 hours: +$225</li></ul>
+        <a class="pill tier-go" data-book="single" href="mailto:contact@galaxihd.com?subject=Project%3A%20Single%20Short&amp;body=Hi%20Galaxi!%0A%0AChannel%20link%3A%20%0AWhat%20the%20Short%20is%20about%3A%20%0AFootage%20ready%20by%3A%20%0ADeadline%3A%20%0A">Book a Short</a>
+      </div>
+      <div class="tier best">
+        <p class="tag"><img src="../assets/discord/star-s-gold.png" alt="" width="6" height="6"><span class="ct" role="img" aria-label="Best value" style="--m:url(../assets/ct/best.png);--w:7.008"></span></p>
+        <h3>Monthly Shorts</h3>
+        <p class="price"><span class="ct" role="img" aria-label="1,600 US dollars" style="--m:url(../assets/ct/1600.png);--w:3.429"></span><small>USD per month · 4 Shorts</small></p>
+        <ul><li><b>$400 a Short</b>, so you save $200</li><li>Your Shorts jump my queue</li></ul>
+        <a class="pill tier-go" data-book="monthly" href="mailto:contact@galaxihd.com?subject=Project%3A%20Monthly%20Shorts&amp;body=Hi%20Galaxi!%0A%0AChannel%20link%3A%20%0AShorts%20per%20month%3A%20%0AStart%20date%3A%20%0AA%20Short%20you%20love%20the%20style%20of%3A%20%0A">Book monthly Shorts</a>
+      </div>
+      <div class="tier">
+        <h3>Long-Form &amp; Custom</h3>
+        <p class="price"><span class="ct" role="img" aria-label="Quote" style="--m:url(../assets/ct/quote.png);--w:2.871"></span><small>within 48 hours</small></p>
+        <ul><li>Long-form edits, 5 to 60+ minutes</li></ul>
+        <a class="pill tier-go" data-book="quote" href="mailto:contact@galaxihd.com?subject=Project%3A%20Long-form%20%2F%20Custom&amp;body=Hi%20Galaxi!%0A%0AChannel%20link%3A%20%0AWhat%20you%20need%3A%20%0AVideo%20length%3A%20%0ADeadline%3A%20%0ABudget%3A%20%0A">Ask for a quote</a>
+      </div>
+    </div>
+    <ol class="steps" aria-label="How it works">
+      <li><b>Send the brief</b>Your footage or topic, and your deadline</li>
+      <li><b>Pay half</b>I start editing and send previews</li>
+      <li><b>Get your files</b>Final MP4 after revisions and the other half</li>
+    </ol>
+    <p class="safe">You pay the second half once your included revisions are done. All prices are in US dollars (USD), not AUD. Booking means you agree to the <a href="#terms" data-terms>Terms &amp; Conditions</a>.</p>
+  </section>
+
+  <section class="card section" id="faq" aria-labelledby="faq-h">
+    <h2 id="faq-h">FAQ</h2>
+    <!-- name="faq": one answer open at a time, keeps it calm -->
+    <div class="faq">
+      <details name="faq"><summary>What do I send you?</summary><p><b>If I'm editing your footage:</b> your raw recordings by Google Drive, Dropbox or WeTransfer, plus your script or voiceover if you have one.</p><p><b>If I'm making the Short for you:</b> just the mod or topic and any points it has to hit. I handle the gameplay, script and edit.</p><p><b>Either way:</b> one video whose style you love (or skip it if you're happy with my own style), any brand assets (logo, fonts, intro or outro), your deadline and where it will be posted.</p></details>
+      <details name="faq"><summary>How do I pay?</summary><p>Revolut is easiest: a secure link for card, Apple Pay or Google Pay, no account needed. I also take PayPal, Wise and bank transfer. Other terms are open to discussion, but a 50% deposit upfront is non-negotiable. After a first project together, studios and brands can pay the rest by invoice (Net-30).</p></details>
+      <details name="faq"><summary>You're in Australia. Is that a problem?</summary><p>Not at all, it's a perk. I'm on Brisbane time (UTC+10), so footage you send at the end of your day gets edited while you sleep. I reply within 48 hours and share previews over email or Discord. Revision notes can just be timestamps, like "0:42, cut this line".</p></details>
+      <details name="faq"><summary>Who owns the final video?</summary><p>You do, once the final payment clears. If I'm editing your footage, it's yours to use anywhere, ads included. If I'm making the Short for you, it's yours to post on your own channels; running it as a paid ad is a separate usage fee, quoted per project. You get the final MP4; source and project files are +$50 a Short. I keep finished work private until you post it, then I can show it in my portfolio. Credit me in the description (like "Edited by @GalaxiHD") unless you've bought paid ad rights.</p></details>
+      <details name="faq"><summary>Can I sponsor a video on your channel?</summary><p>Yes, as a Short or a long-form integration on GalaxiHD. Email me your brand, product, preferred format and timeline, and I'll reply within 48 hours with rates. Every sponsorship is clearly disclosed, as YouTube and FTC rules require. Using the video in your own ads is quoted separately. My audience numbers are just below.</p></details>
+    </div>
+  </section>
+
+  <!-- Edited for clients: unhide (and add a menu link) once edited.json has videos; entries use the clients.json shape -->
+  <section class="card section" id="edited" aria-labelledby="edited-h" hidden>
+    <h2 id="edited-h">Edited For Clients</h2>
+    <p class="lede">Videos I edited for other creators and brands.</p>
+    <div class="grid" data-src="../edited.json" data-show="3"></div>
+  </section>
+
+  <section class="card glass work" id="contact" aria-labelledby="contact-h">
+    <h2 id="contact-h">Sponsorships &amp; Contact</h2>
+    <!-- audience snapshot from YouTube Analytics (via VidIQ), 2026-07-10 to 2026-10-07; refresh every few months -->
+    <div class="audience">
+      <p class="audience-h">Audience · Last 90 Days</p>
+      <ul><li><b data-live="UCwywZS4y7ExtoSBUxZDgC3Q">32K+</b> subscribers</li><li><b>2.6M+</b> views</li><li><b>77%</b> aged 13–34</li><li><b>87%</b> male</li><li><b>Top:</b> US, UK, India, Philippines</li></ul>
+    </div>
+    <p class="open">Brands: email your product, format and timeline. Editing: start from Rates. I reply within 48 hours.</p>
+    <div class="cta">
+      <a class="pill cta-hire" href="#rates">Start a project →</a>
+      <a class="pill cta-mail" href="mailto:contact@galaxihd.com"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m3.5 7 8.5 6 8.5-6"/></svg>contact@galaxihd.com</a>
+    </div>
+  </section>
+
+  <footer>© GalaxiHD<br><small>TV WORLD (DELTARUNE) and UNDERTALE sound effects and sprites © Toby Fox · SUPER MARIO BROS. sprites © Nintendo · used in a fan easter egg, not affiliated with Toby Fox or Nintendo</small></footer>
+</main>
+
+<template id="ytLogo"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M23 7.2a3 3 0 0 0-2.1-2.1C19 4.6 12 4.6 12 4.6s-7 0-8.9.5A3 3 0 0 0 1 7.2 31 31 0 0 0 .6 12a31 31 0 0 0 .4 4.8 3 3 0 0 0 2.1 2.1c1.9.5 8.9.5 8.9.5s7 0 8.9-.5a3 3 0 0 0 2.1-2.1 31 31 0 0 0 .4-4.8 31 31 0 0 0-.4-4.8ZM9.7 15.1V8.9l5.8 3.1-5.8 3.1Z"/></svg></template>
+<canvas id="fx" aria-hidden="true"></canvas>
+<!-- Terms: Galaxi's rights as an editor. Plain-language, not lawyer-reviewed. Keep in sync with Rates + FAQ. Opened by any [data-terms] link -->
+<dialog class="book card" id="terms" aria-labelledby="terms-h">
+  <form method="dialog">
+    <h3 id="terms-h">Terms &amp; Conditions</h3>
+    <div class="terms">
+      <p>Last updated 14 October 2026. These Terms &amp; Conditions ("Terms") govern all services provided by GalaxiHD, a sole trader based in Queensland, Australia ("GalaxiHD"), to any client (the "Client"), being the editing of the Client's footage, the production of short-form video (each a "Short") for the Client, long-form video editing and sponsorships on GalaxiHD's own channel (the "Services"). Each engagement is a "Project", the video content that GalaxiHD creates or edits under it is the "Work", and the final files released to the Client are the "Deliverables". The Client agrees to these Terms by ticking the acceptance box, booking, paying a deposit or sending Client materials, and the person accepting warrants authority to bind the Client. The scope and price of each Project are those in the accepted booking email or quote (the "Booking"). These Terms and the Booking are the entire agreement for the Project. These Terms prevail over a conflicting Booking term unless GalaxiHD confirms in writing a variation expressly referring to the clause. An unenforceable provision is read down as necessary and the remainder continues.</p>
+      <ol>
+          <li><b>Right to Refuse.</b> GalaxiHD may decline or terminate any Project for any reason, including unsuitable content, legal or reputational risk or Client conduct, by written notice. If GalaxiHD terminates a Project, GalaxiHD will refund any amount paid for Work not yet delivered. The Client may cancel by written notice; the deposit is refunded if Work has not commenced and otherwise retained, and the balance is also due if the included revisions are complete.</li>
+          <li><b>Commencement &amp; Payment.</b> Work commences when GalaxiHD begins the Work after receiving the 50% deposit and all required materials. No refund is due for delivered Work, subject to clause 17. The deposit is non-refundable once Work has commenced (subject to clause 1). The balance is due when the included revisions are complete. Prices are in USD and exclude taxes, duties and levies payable by the Client. The Client bears all transfer, conversion and platform fees. The Client must raise payment concerns in writing before initiating a chargeback or payment dispute, and any licence ends if a payment is reversed. Net-30 invoicing for returning business clients applies only by written agreement.</li>
+          <li><b>Timelines.</b> Delivery dates are estimates dependent on timely materials, feedback and payment. GalaxiHD is not liable for delay or failure caused by events beyond his reasonable control, including illness.</li>
+          <li><b>Revisions &amp; Scope.</b> One round of revisions is included per Short. A revision adjusts the existing edit and excludes any new brief, concept or footage. A round is one consolidated set of changes, and further rounds are charged at US$50 per Short and payable before they begin. Changes outside the original scope are quoted separately.</li>
+          <li><b>Inactivity.</b> If the Client does not respond for 30 consecutive days, and has not responded to a written reminder sent by GalaxiHD after the 14th day, the Project closes and payment for all Work completed to that date, less the deposit paid, becomes due.</li>
+          <li><b>Delivery &amp; Ownership.</b> The Deliverables (MP4) are released only upon payment in full. Source and project files are not included unless purchased (US$50 per Short), and are then licensed on the terms of clause 7 solely for modifying the Deliverable. Copyright in sponsored content on GalaxiHD's own channel remains with GalaxiHD.</li>
+          <li><b>Copyright &amp; Usage Rights.</b> Upon payment in full: (a) where GalaxiHD edits the Client's footage, copyright in the Client's footage and other Client materials remains with the Client, and GalaxiHD assigns to the Client all copyright he holds in the Deliverable, other than in Retained Materials (paragraph (c)), and the Client may use the Deliverable for any purpose, including advertising; (b) where GalaxiHD produces the content, copyright remains with GalaxiHD, and he grants the Client a non-exclusive, non-transferable, worldwide, perpetual licence to publish the Deliverable organically on the Client's own channels, and use in paid advertising requires a separately purchased advertising licence (the "Advertising Licence"); (c) GalaxiHD retains ownership of all pre-existing and independently created materials, including templates, presets, effects, sound and graphic assets, his own gameplay recordings and voice, and his know-how and methods ("Retained Materials"), and licenses those embedded in a Deliverable to the Client on the same terms as that Deliverable. A licence under this clause ends if the Client materially breaches clause 8 or 9.</li>
+          <li><b>Creator Likeness.</b> GalaxiHD's name, voice, face, image, likeness and channel branding, and any voice clone, deepfake or other synthetic recreation of them, remain his property. The Client must not use or recreate them, or imply his endorsement, without GalaxiHD's prior written consent or, for non-synthetic use, a purchased Advertising Licence. No Advertising Licence permits any synthetic recreation of his likeness or voice; only his separate written consent can, and never for the purposes in clause 9.</li>
+          <li><b>No AI Training.</b> Regardless of any licence or payment, no Work, Deliverable, source file or Retained Material of GalaxiHD, and no part of his name, voice, face or likeness, may be used by the Client, or anyone it permits, sublicenses or assigns to, and the Client must bind each of them to this clause, to train, fine-tune or develop any artificial intelligence or machine-learning model, be included in any dataset or embedding, or clone his voice, likeness or style. The Client must use reasonable efforts to opt out of platform AI-training settings. This clause overrides every licence and survives termination.</li>
+          <li><b>Attribution &amp; Moral Rights.</b> The Client must credit GalaxiHD, and must not remove or alter the credit, on every video it publishes organically that GalaxiHD has worked on, e.g. "Edited by @GalaxiHD", unless an Advertising Licence has been purchased. This does not apply to paid advertising placements of footage edits. Credit is contractual and does not condition ownership. GalaxiHD retains his moral rights under the Copyright Act 1968 (Cth), and the Client must not falsely attribute or derogatorily treat the Work. GalaxiHD consents to the Client cropping, trimming and captioning the Deliverable for publication.</li>
+          <li><b>Portfolio.</b> Once the Work has been publicly released, GalaxiHD may display it, including Client materials incorporated in it, in his portfolio and on his social media channels, and the Client grants him a non-exclusive licence for that purpose.</li>
+          <li><b>Client Materials.</b> The Client warrants that it owns, or holds the necessary rights to, all materials supplied, including footage, music and voices. The Client indemnifies GalaxiHD against third-party claims and reasonable losses to the extent arising from those materials or its breach of this warranty, but not to the extent caused by GalaxiHD.</li>
+          <li><b>Sponsored Content.</b> Sponsorships on GalaxiHD's channel are agreed per Booking. Sponsors may request changes but GalaxiHD retains final creative control. Sponsorships are disclosed with YouTube's paid promotion label and in line with FTC, ASA/CAP (UK) and AANA (Australia) requirements.</li>
+          <li><b>Liability &amp; Risk.</b> To the extent permitted by law, GalaxiHD's total liability is limited to the amount paid by the Client for the Project concerned, and excludes indirect or consequential loss, including lost views or revenue. GalaxiHD does not guarantee views, retention or sponsorship outcomes or accept responsibility for platform policy changes, demonetisation, strikes or Content ID claims, including over Client-supplied music. GalaxiHD warrants that the Work, excluding Client materials, is original and not knowingly infringing. This clause does not limit liability for death, personal injury, fraud or any liability that cannot lawfully be limited, and for a failure to comply with a consumer guarantee, GalaxiHD's liability is limited only as permitted by section 64A of the Australian Consumer Law.</li>
+          <li><b>Governing Law.</b> These Terms are governed by the laws of Queensland, Australia, subject to clause 17. The Client submits to the non-exclusive jurisdiction of the courts of Queensland, without limiting GalaxiHD's right to bring proceedings in any other competent court.</li>
+          <li><b>Changes to These Terms.</b> GalaxiHD may update these Terms. Updated Terms are published with a new "Last updated" date and apply only to Projects booked after publication.</li>
+          <li><b>Non-Excludable Rights.</b> Nothing in these Terms excludes or restricts any right, remedy or guarantee that the Client has under the Competition and Consumer Act 2010 (Cth), including the Australian Consumer Law, or under any mandatory consumer protection law of the Client's country of residence, that cannot lawfully be excluded.</li>
+          <li><b>General.</b> Acceptance by tick box, email or other electronic means is binding, and electronic communications satisfy any requirement for writing. Notices to GalaxiHD must be sent to contact@galaxihd.com, and notices to the Client to the email address in the Booking. Clauses 1, 2, 5 to 12, 14, 15, 17 and 18 survive termination, cancellation or closure of a Project.</li>
+      </ol>
+    </div>
+    <label class="agree"><input type="checkbox" name="agree"> <span>I have read and agree to the Terms &amp; Conditions</span></label>
+    <div class="cta"><button class="pill cta-hire" disabled>Got it</button></div>
+  </form>
+</dialog>
+<!-- Book dialog: pick add-ons, then it writes an email (mailto). No payment happens on the site.
+     Prices live in BOOK below; keep them in sync with the Rates cards. Without JS the buttons are plain mailto links. -->
+<dialog class="book card" id="book" aria-labelledby="book-h">
+  <form method="dialog">
+    <h3 id="book-h"></h3>
+    <p class="book-base"></p>
+    <fieldset>
+      <legend></legend>
+      <label data-for="single monthly"><input type="checkbox" name="rev"> <span>+1 revision round</span> <small class="per">+$50/Short</small></label>
+      <label data-for="single"><input type="checkbox" name="rush"> <span>Rush: first cut within 48 hours</span> <small>+$225</small></label>
+      <label data-for="monthly"><input type="checkbox" name="extra"> <span>1 extra Short this month</span> <small>+$400</small></label>
+      <label data-for="single monthly"><input type="checkbox" name="src"> <span>Source files</span> <small class="per">+$50/Short</small></label>
+      <label class="len" data-for="quote"><span>Video length</span> <small><output name="lenOut">10 min</output></small><input type="range" name="len" min="5" max="60" step="5" value="10" aria-label="Video length in minutes"></label>
+      <label data-for="quote"><input type="checkbox" name="q" value="Source files"> <span>Source files</span> <small>+$50</small></label>
+    </fieldset>
+    <div class="book-foot">
+    <p class="book-total">Estimated total <b></b></p>
+    <p class="book-note">Nothing is charged here. This opens an email to contact@galaxihd.com that you can edit before sending.</p>
+    <div class="cta"><button class="pill cta-ghost" value="cancel">Back</button><a class="pill cta-hire" id="book-go" href="#">Write my email →</a></div>
+    <button type="button" class="book-copy"></button>
+    <p class="book-agree">Booking means you agree to the <a href="#terms" data-terms>Terms &amp; Conditions</a>.</p>
+    </div>
+  </form>
+</dialog>
+<script>
+{
+  const BOOK = {
+    single: { name: "Single Short", base: 450, shorts: 1, line: "US$450 per Short", legend: "Add-ons, if you want them" },
+    monthly: { name: "Monthly Shorts", base: 1600, shorts: 4, line: "US$1,600 per month · 4 Shorts", legend: "Add-ons, if you want them" },
+    // ponytail: long-form estimate = rate per finished minute, cheaper after the first 10; shown as a ±15% range. Change the numbers here only
+    quote: { name: "Long-Form & Custom", perMin: 60, perMinAfter10: 30, line: "Tell me what you need and I'll quote within 48 hours", legend: "Length and extras" },
+  };
+  const d = document.getElementById("book"), f = d.querySelector("form"), go = document.getElementById("book-go");
+  const usd = n => "$" + n.toLocaleString("en-US");
+  let pick;
+  let draft = ""; // same email as plain text, for people with no mail app set up (mailto then does nothing)
+  const mail = (subject, lines) => {
+    draft = `To: contact@galaxihd.com\nSubject: ${subject}\n\n${lines.join("\n")}`;
+    return `mailto:contact@galaxihd.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(lines.join("\n"))}`;
+  };
+  const copy = d.querySelector(".book-copy");
+  copy.addEventListener("click", async () => {
+    if (needTerms(() => copy.click())) return;
+    try { await navigator.clipboard.writeText(draft); copy.textContent = "Copied! Paste it into an email to contact@galaxihd.com"; }
+    catch { copy.textContent = "Couldn't copy. Email contact@galaxihd.com directly"; }
+  });
+  const update = () => {
+    const p = BOOK[pick], total = d.querySelector(".book-total b");
+    if (pick === "quote") {
+      const want = [...f.querySelectorAll("[name=q]:checked")].map(c => c.value);
+      const m = +f.len.value, len = m >= 60 ? "60+ min" : m + " min";
+      f.lenOut.value = len;
+      const est = Math.min(m, 10) * p.perMin + Math.max(m - 10, 0) * p.perMinAfter10 + (want.includes("Source files") ? 50 : 0);
+      const r50 = n => Math.round(n / 50) * 50, range = `${usd(r50(est * .85))}–${usd(r50(est * 1.15))}${m >= 60 ? "+" : ""}`;
+      total.textContent = range;
+      const job = "Long-form edit", extras = want.includes("Source files") ? " + source files" : "";
+      go.href = mail(`Quote: ${job}${extras}`, [`Hi Galaxi!`, ``, `I'd like a quote for: ${job}${extras}`,
+        `Video length: ${len}`, `Estimate from your site: ${range} USD`, ``,
+        `Channel or brand link: `, `What it's about: `, `Deadline: `, `Budget: `, ``]);
+      return;
+    }
+    const extra = pick === "monthly" && f.extra.checked, shorts = p.shorts + (extra ? 1 : 0), adds = [];
+    let sum = p.base;
+    if (extra) { sum += 400; adds.push("1 extra Short (+$400)"); }
+    if (f.rev.checked) { sum += 50 * shorts; adds.push(`+1 revision round on each Short (+${usd(50 * shorts)})`); }
+    if (pick === "single" && f.rush.checked) { sum += 225; adds.push("Rush, first cut within 48 hours (+$225)"); }
+    if (f.src.checked) { sum += 50 * shorts; adds.push(`Source files for each Short (+${usd(50 * shorts)})`); }
+    total.textContent = usd(sum) + (pick === "monthly" ? " / month" : "");
+    go.href = mail("Booking: " + p.name, [`Hi Galaxi!`, ``, `I'd like to book: ${p.name} (${p.line})`, `Add-ons: ${adds.length ? adds.join(", ") : "none"}`, `Estimated total: ${usd(sum)} USD`, ``,
+      `Channel link: `, pick === "monthly" ? `Start date: ` : `What the Short is about: `, `Footage ready by: `, `A Short you love the style of: `, ``]);
+  };
+  document.querySelectorAll("[data-book]").forEach(b => b.addEventListener("click", e => {
+    e.preventDefault(); pick = b.dataset.book; f.reset();
+    const p = BOOK[pick];
+    d.querySelector("#book-h").textContent = p.name;
+    d.querySelector(".book-base").textContent = p.line;
+    d.querySelector("legend").textContent = p.legend;
+    d.querySelector(".book-total").firstChild.textContent = pick === "quote" ? "Estimate (USD) " : "Estimated total (USD) ";
+    copy.textContent = "No mail app? Copy the email instead";
+    d.querySelectorAll("[data-for]").forEach(l => l.hidden = !l.dataset.for.split(" ").includes(pick));
+    d.querySelectorAll(".per").forEach(x => x.textContent = pick === "single" ? "+$50" : "+$50/Short"); // "a Short" only means something on Monthly
+    update(); d.showModal();
+    d.append(...layer()); // a modal sits in the top layer, so the star cursor + sparkles ride inside it while open
+  }));
+  const layer = () => ["cursor", "fx"].map(id => document.getElementById(id)).filter(Boolean);
+  d.addEventListener("close", () => document.body.append(...layer()));
+  f.addEventListener("change", update);
+  f.addEventListener("input", update); // slider updates live while dragging
+  go.addEventListener("click", e => {
+    if (needTerms(() => { location.href = go.href; d.close(); })) return e.preventDefault();
+    d.close();
+  });
+  d.addEventListener("click", e => { if (e.target === d) d.close(); }); // click outside closes
+  const t = document.getElementById("terms"), openTerms = () => { t.showModal(); t.append(...layer()); };
+  let pending; // the email/copy they clicked before agreeing; carried out once they tick + close
+  function needTerms(then) { if (agree.checked) return false; pending = then; openTerms(); return true; }
+  document.querySelectorAll("[data-terms]").forEach(a => a.addEventListener("click", e => { e.preventDefault(); openTerms(); }));
+  t.addEventListener("close", () => {
+    (d.open ? d : document.body).append(...layer()); // back into the Book dialog if Terms opened from it
+    const next = pending; pending = null; next?.();
+  });
+  const ok = t.querySelector("button"), agree = t.querySelector("[name=agree]");
+  agree.addEventListener("change", () => ok.disabled = !agree.checked); // can't close until they tick it (stays ticked for the visit)
+  t.addEventListener("cancel", e => { if (!agree.checked) e.preventDefault(); }); // Esc
+  t.addEventListener("click", e => { if (e.target === t && agree.checked) t.close(); });
+}
+</script>
+<script src="../site.js?v=202610142500"></script>
+</body>
+</html>

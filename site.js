@@ -116,7 +116,11 @@ const BUILD = ME.search; // "?v=..." from the page's own <script> tag, passed on
     const yt = strip.lastElementChild; yt.hidden = true;
     strip.prepend(...Array.from({ length: 4 }, () => Object.assign(document.createElement("figure"), { className: "vid skel-tile", innerHTML: '<div class="thumb skel"></div><div class="skel skel-line"></div>' })));
     let list;
-    try { list = (await (await fetch(strip.dataset.src, { cache: "no-store" })).json()).slice(0, 7); }
+    try {
+      list = (await Promise.all(strip.dataset.src.split(",").map(async u => (await fetch(u.trim(), { cache: "no-store" })).json()))).flat();
+      if (strip.dataset.sort === "views") list.sort((x, y) => y.views - x.views);
+      list = list.slice(0, 7);
+    }
     catch { strip.closest("section").hidden = true; return; }
     let active = null;
     const stop = fig => { fig.firstChild.replaceWith(fig.thumbBtn); if (active === fig) active = null; };
